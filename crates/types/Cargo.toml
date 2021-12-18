@@ -1,9 +1,13 @@
 [package]
-name = "zarb-crypto"
+name = "zarb-types"
 version = "0.1.0"
 edition = "2021"
 authors = ["Zarb <admin@zarb.network>"]
 
 [dependencies]
+zarb-crypto = { path = "../crypto" }
 thiserror = "1.0"
 minicbor = { version = "0.12", features = ["std", "half", "derive"] }
+
+[dev-dependencies]
+hex-literal = "0.3"
