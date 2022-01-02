@@ -4,7 +4,7 @@ use minicbor::{Decode, Encode};
 const ADDRESS_SIZE: usize = 21;
 
 pub struct Address {
-    pub data: [u8; ADDRESS_SIZE],
+    data: [u8; ADDRESS_SIZE],
 }
 
 impl minicbor::Encode for Address {
