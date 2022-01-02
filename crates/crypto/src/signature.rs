@@ -1,3 +1,3 @@
-pub trait signature {
-    
+pub trait Signature {
+    fn to_bytes(&self) -> Vec<u8>;
 }
