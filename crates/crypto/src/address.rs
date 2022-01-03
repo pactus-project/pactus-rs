@@ -1,11 +1,9 @@
 use crate::error::{Error, Result};
-use minicbor::{Decode, Encode};
 
 const ADDRESS_SIZE: usize = 21;
 
-pub struct Address {
-    data: [u8; ADDRESS_SIZE],
-}
+pub struct Address([u8; ADDRESS_SIZE]);
+
 
 impl minicbor::Encode for Address {
     fn encode<W>(
@@ -15,7 +13,7 @@ impl minicbor::Encode for Address {
     where
         W: minicbor::encode::Write,
     {
-        e.bytes(&self.data)?;
+        e.bytes(&self.0)?;
         Ok(())
     }
 }
@@ -27,7 +25,7 @@ impl<'a> minicbor::Decode<'a> for Address {
         let data = d.bytes()?.try_into().map_err(|_| {
             minicbor::decode::Error::Message("byte slice length does not match expected length")
         })?;
-        Ok(Address { data })
+        Ok(Address (data))
     }
 }
 

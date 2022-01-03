@@ -10,7 +10,7 @@ const PUBLIC_KEY_SIZE: usize = 96;
 #[derive(Debug, PartialEq, Eq)]
 pub struct PublicKey(pub(super) G2Projective);
 
-impl crate::public_key::PublicKey for PublicKey {
+impl<'a> crate::public_key::PublicKey<'a> for PublicKey {
     type Signature = super::signature::Signature;
 
     fn verify(&self, sig: Signature, msg: &[u8]) -> bool {
@@ -29,7 +29,7 @@ impl crate::public_key::PublicKey for PublicKey {
         .into()
     }
     fn to_bytes(&self) -> Vec<u8> {
-        self.0.to_affine().to_compressed().to_vec()
+        PublicKey::to_bytes(&self).to_vec()
     }
 }
 
@@ -48,24 +48,5 @@ impl PublicKey {
     }
 }
 
-impl minicbor::Encode for PublicKey {
-    fn encode<W>(
-        &self,
-        e: &mut minicbor::Encoder<W>,
-    ) -> core::result::Result<(), minicbor::encode::Error<W::Error>>
-    where
-        W: minicbor::encode::Write,
-    {
-        e.bytes(&self.to_bytes())?;
-        Ok(())
-    }
-}
+super::impl_cbor!(PublicKey);
 
-impl<'a> minicbor::Decode<'a> for PublicKey {
-    fn decode(
-        d: &mut minicbor::Decoder<'a>,
-    ) -> core::result::Result<PublicKey, minicbor::decode::Error> {
-        Ok(PublicKey::from_bytes(d.bytes()?)
-            .map_err(|_| minicbor::decode::Error::Message("error"))?)
-    }
-}

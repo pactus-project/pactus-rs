@@ -7,9 +7,9 @@ const SIGNATURE_KEY_SIZE: usize = 48;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Signature(pub(super) G1Projective);
 
-impl crate::signature::Signature for Signature {
+impl<'a> crate::signature::Signature<'a> for Signature {
     fn to_bytes(&self) -> Vec<u8> {
-        self.0.to_affine().to_compressed().to_vec()
+        Signature::to_bytes(&self).to_vec()
     }
 }
 
@@ -29,9 +29,11 @@ impl Signature {
     }
 
     /// The domain separation tag
-    const DST: &'static [u8] = b"BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_POP_";
+    const DST: &'static [u8] = b"QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_RO_";
 
     pub(super) fn hash_msg(msg: &[u8]) -> G1Projective {
         G1Projective::hash::<ExpandMsgXmd<sha2::Sha256>>(msg, Self::DST)
     }
 }
+
+super::impl_cbor!(Signature);

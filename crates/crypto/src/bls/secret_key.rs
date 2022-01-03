@@ -8,7 +8,7 @@ const SECRET_KEY_SIZE: usize = 32;
 #[derive(Debug, PartialEq, Eq)]
 pub struct SecretKey(pub(super) Scalar);
 
-impl crate::secret_key::SecretKey for SecretKey {
+impl<'a> crate::secret_key::SecretKey<'a> for SecretKey {
     type PublicKey = super::public_key::PublicKey;
     type Signature = super::signature::Signature;
 
@@ -22,7 +22,7 @@ impl crate::secret_key::SecretKey for SecretKey {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        self.0.to_bytes().to_vec()
+        SecretKey::to_bytes(&self).to_vec()
     }
 }
 
@@ -41,35 +41,15 @@ impl SecretKey {
     }
 }
 
-impl minicbor::Encode for SecretKey {
-    fn encode<W>(
-        &self,
-        e: &mut minicbor::Encoder<W>,
-    ) -> core::result::Result<(), minicbor::encode::Error<W::Error>>
-    where
-        W: minicbor::encode::Write,
-    {
-        e.bytes(&self.to_bytes())?;
-        Ok(())
-    }
-}
+super::impl_cbor!(SecretKey);
 
-impl<'a> minicbor::Decode<'a> for SecretKey {
-    fn decode(
-        d: &mut minicbor::Decoder<'a>,
-    ) -> core::result::Result<SecretKey, minicbor::decode::Error> {
-        Ok(SecretKey::from_bytes(d.bytes()?)
-            .map_err(|_| minicbor::decode::Error::Message("error"))?)
-    }
-}
+
 #[cfg(test)]
 mod tests {
     use crate::{signature::Signature, secret_key::SecretKey, public_key::PublicKey};
 
     #[test]
     fn test_decoding() {
-        // let buf1 =
-        //     hex!("d0c6a560de2e60b6ac55386defefdf93b0c907290c2ad1b4dbd3338186bfdc68").to_vec();
         let buf1 = hex::decode("d0c6a560de2e60b6ac55386defefdf93b0c907290c2ad1b4dbd3338186bfdc68")
             .unwrap()
             .to_vec();
@@ -81,7 +61,7 @@ mod tests {
         println!("{}", hex::encode(pub_key.to_bytes()));
         println!("{}", hex::encode(sig.to_bytes()));
 
-        let buf2 = hex::decode("a2d06b33af2c9e7ca878da85a96b2c2346f4306d0473bdabc38be87c19dae5e67e08724a5220d0e372fb080bbd2fbde9")
+        let buf2 = hex::decode("a3a58ab4a1a15875aa8228376f5da88b6bd9839856d2b1fbd0763fdb73e89832d459109c791c3ce533fabac60028d9f9")
             .unwrap()
             .to_vec();
         let sig2 = super::Signature::from_bytes(buf2.as_slice()).unwrap();
