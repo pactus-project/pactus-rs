@@ -2,9 +2,9 @@ pub mod account;
 pub mod block;
 pub mod certificate;
 pub mod error;
+pub mod params;
 pub mod tx;
 pub mod validator;
-pub mod params;
 
 macro_rules! impl_from_to_bytes {
     ($ty:ty) => {
