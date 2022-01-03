@@ -22,9 +22,7 @@ pub struct Validator {
 }
 
 impl Validator {
-    pub fn from_bytes(buf: &[u8]) -> Result<Self> {
-        Ok(minicbor::decode(buf)?)
-    }
+    crate::impl_from_to_bytes!(Validator);
 }
 
 #[cfg(test)]
@@ -40,8 +38,7 @@ mod tests {
         .unwrap()
         .to_vec();
         let val = Validator::from_bytes(buf1.as_slice()).unwrap();
-        let mut buf2 = Vec::new();
-        minicbor::encode(&val, &mut buf2).unwrap();
+        let buf2 = val.to_bytes().unwrap();
         assert_eq!(buf1, buf2);
     }
 }

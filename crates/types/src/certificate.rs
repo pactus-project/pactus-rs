@@ -1,5 +1,6 @@
 use minicbor::{Decode, Encode};
 use zarb_crypto::hash::Hash32;
+use zarb_crypto::bls::signature::Signature;
 
 #[derive(Encode, Decode)]
 pub struct Certificate {
@@ -11,5 +12,6 @@ pub struct Certificate {
     committers: Vec<i32>,
     #[n(4)]
     absentees: Vec<i32>,
-    //Signature  :bls.Signature
+    #[n(5)]
+    signature: Signature,
 }

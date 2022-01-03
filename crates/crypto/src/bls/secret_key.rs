@@ -33,7 +33,7 @@ impl SecretKey {
             found: data.len(),
         })?;
         let key_opt = Scalar::from_bytes(bytes);
-        Ok(SecretKey(key_opt.unwrap()))
+        Ok(Self(key_opt.unwrap()))
     }
 
     pub fn to_bytes(&self) -> [u8; SECRET_KEY_SIZE] {
@@ -41,7 +41,7 @@ impl SecretKey {
     }
 }
 
-super::impl_cbor!(SecretKey);
+crate::impl_cbor!(SecretKey);
 
 
 #[cfg(test)]

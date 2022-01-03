@@ -40,7 +40,7 @@ impl PublicKey {
             found: data.len(),
         })?;
         let key_opt = G2Affine::from_compressed(bytes);
-        Ok(PublicKey(G2Projective::from(&key_opt.unwrap())))
+        Ok(Self(G2Projective::from(&key_opt.unwrap())))
     }
 
     pub fn to_bytes(&self) -> [u8; PUBLIC_KEY_SIZE] {
@@ -48,5 +48,5 @@ impl PublicKey {
     }
 }
 
-super::impl_cbor!(PublicKey);
+crate::impl_cbor!(PublicKey);
 

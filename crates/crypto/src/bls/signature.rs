@@ -21,7 +21,7 @@ impl Signature {
                 found: data.len(),
             })?;
         let key_opt = G1Affine::from_compressed(bytes);
-        Ok(Signature(G1Projective::from(&key_opt.unwrap())))
+        Ok(Self(G1Projective::from(&key_opt.unwrap())))
     }
 
     pub fn to_bytes(&self) -> [u8; SIGNATURE_KEY_SIZE] {
@@ -36,4 +36,4 @@ impl Signature {
     }
 }
 
-super::impl_cbor!(Signature);
+crate::impl_cbor!(Signature);

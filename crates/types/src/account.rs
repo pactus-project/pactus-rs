@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 use minicbor::{Decode, Encode};
 use zarb_crypto::address::Address;
 
@@ -15,12 +15,9 @@ pub struct Account {
     pub balance: i64,
 }
 
-impl TryFrom<&[u8]> for Account {
-    type Error = Error;
+impl Account {
+    crate::impl_from_to_bytes!(Account);
 
-    fn try_from(buf: &[u8]) -> Result<Self> {
-        Ok(minicbor::decode(buf)?)
-    }
 }
 
 #[cfg(test)]
@@ -34,7 +31,7 @@ mod tests {
         )
         .unwrap()
         .to_vec();
-        let acc = Account::try_from(buf1.as_slice()).unwrap();
+        let acc = Account::from_bytes(buf1.as_slice()).unwrap();
         let mut buf2 = Vec::new();
         minicbor::encode(&acc, &mut buf2).unwrap();
         assert_eq!(buf1, buf2);
