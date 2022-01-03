@@ -4,7 +4,7 @@ pub mod certificate;
 pub mod error;
 pub mod tx;
 pub mod validator;
-
+pub mod params;
 
 macro_rules! impl_from_to_bytes {
     ($ty:ty) => {
