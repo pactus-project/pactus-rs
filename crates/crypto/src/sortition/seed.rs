@@ -1,6 +1,5 @@
 use crate::error::{Error, Result};
 
-
 const SEED_SIZE: usize = 48;
 pub struct Seed([u8; SEED_SIZE]);
 

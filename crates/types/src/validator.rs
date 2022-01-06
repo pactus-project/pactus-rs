@@ -1,4 +1,3 @@
-use crate::error::Result;
 use minicbor::{Decode, Encode};
 use zarb_crypto::bls::public_key::PublicKey;
 

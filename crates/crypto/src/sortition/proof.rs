@@ -1,6 +1,5 @@
 use crate::error::{Error, Result};
 
-
 const PROOF_SIZE: usize = 48;
 pub struct Proof([u8; PROOF_SIZE]);
 

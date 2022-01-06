@@ -28,10 +28,16 @@ impl<'a> crate::secret_key::SecretKey<'a> for SecretKey {
 
 impl SecretKey {
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
-        let bytes: &[u8; SECRET_KEY_SIZE] = data.try_into().map_err(|_| Error::InvalidLength {
-            expected: SECRET_KEY_SIZE,
-            found: data.len(),
-        })?;
+        let mut data_be = data.to_vec();
+        data_be.reverse(); // converting to big-endian
+        let bytes: &[u8; SECRET_KEY_SIZE] =
+            data_be
+                .as_slice()
+                .try_into()
+                .map_err(|_| Error::InvalidLength {
+                    expected: SECRET_KEY_SIZE,
+                    found: data.len(),
+                })?;
         let key_opt = Scalar::from_bytes(bytes);
         Ok(Self(key_opt.unwrap()))
     }
@@ -43,37 +49,33 @@ impl SecretKey {
 
 crate::impl_cbor!(SecretKey);
 
-
 #[cfg(test)]
 mod tests {
-    use crate::{signature::Signature, secret_key::SecretKey, public_key::PublicKey};
+    use crate::{public_key::PublicKey, secret_key::SecretKey};
 
     #[test]
     fn test_decoding() {
-        let buf1 = hex::decode("d0c6a560de2e60b6ac55386defefdf93b0c907290c2ad1b4dbd3338186bfdc68")
+        let sec_buf =
+            hex::decode("68dcbf868133d3dbb4d12a0c2907c9b093dfefef6d3855acb6602ede60a5c6d0")
+                .unwrap()
+                .to_vec();
+
+        let pub_buf = hex::decode("af0f74917f5065af94727ae9541b0ddcfb5b828a9e016b02498f477ed37fb44d5d882495afb6fd4f9773e4ea9deee436030c4d61c6e3a1151585e1d838cae1444a438d089ce77e10c492a55f6908125c5be9b236a246e4082d08de564e111e65")
             .unwrap()
             .to_vec();
 
-        let sec_key = super::SecretKey::from_bytes(buf1.as_slice()).unwrap();
-        let pub_key = sec_key.public_key();
+        let sig_buf = hex::decode("a2d06b33af2c9e7ca878da85a96b2c2346f4306d0473bdabc38be87c19dae5e67e08724a5220d0e372fb080bbd2fbde9")
+        .unwrap()
+        .to_vec();
+
         let msg = "zarb".as_bytes();
-        let sig = sec_key.sign(msg);
-        println!("{}", hex::encode(pub_key.to_bytes()));
-        println!("{}", hex::encode(sig.to_bytes()));
 
-        let buf2 = hex::decode("a3a58ab4a1a15875aa8228376f5da88b6bd9839856d2b1fbd0763fdb73e89832d459109c791c3ce533fabac60028d9f9")
-            .unwrap()
-            .to_vec();
-        let sig2 = super::Signature::from_bytes(buf2.as_slice()).unwrap();
+        let sec_key = super::SecretKey::from_bytes(sec_buf.as_slice()).unwrap();
+        let pub_key = super::PublicKey::from_bytes(pub_buf.as_slice()).unwrap();
+        let sig = super::Signature::from_bytes(sig_buf.as_slice()).unwrap();
 
-        let buf3 = hex::decode("af0f74917f5065af94727ae9541b0ddcfb5b828a9e016b02498f477ed37fb44d5d882495afb6fd4f9773e4ea9deee436030c4d61c6e3a1151585e1d838cae1444a438d089ce77e10c492a55f6908125c5be9b236a246e4082d08de564e111e65")
-            .unwrap()
-            .to_vec();
-        let pub_key2 = super::PublicKey::from_bytes(buf3.as_slice()).unwrap();
-
-        let verified = pub_key2.verify(sig2, msg);
-        assert!(verified);
+        assert_eq!(sec_key.public_key(), pub_key);
+        assert_eq!(sec_key.sign(msg), sig);
+        assert!(pub_key.verify(sig, msg));
     }
 }
-
-// af0f74917f5065af94727ae9541b0ddcfb5b828a9e016b02498f477ed37fb44d5d882495afb6fd4f9773e4ea9deee436030c4d61c6e3a1151585e1d838cae1444a438d089ce77e10c492a55f6908125c5be9b236a246e4082d08de564e111e65

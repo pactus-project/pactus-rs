@@ -49,4 +49,3 @@ impl PublicKey {
 }
 
 crate::impl_cbor!(PublicKey);
-

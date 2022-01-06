@@ -20,7 +20,6 @@ impl Address {
 
 crate::impl_cbor!(Address);
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

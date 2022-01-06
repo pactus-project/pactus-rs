@@ -1,4 +1,3 @@
-use crate::error::Result;
 use minicbor::{Decode, Encode};
 use zarb_crypto::address::Address;
 
@@ -17,7 +16,6 @@ pub struct Account {
 
 impl Account {
     crate::impl_from_to_bytes!(Account);
-
 }
 
 #[cfg(test)]

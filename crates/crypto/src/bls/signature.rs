@@ -29,7 +29,7 @@ impl Signature {
     }
 
     /// The domain separation tag
-    const DST: &'static [u8] = b"QUUX-V01-CS02-with-BLS12381G2_XMD:SHA-256_SSWU_RO_";
+    const DST: &'static [u8] = b"BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_POP_";
 
     pub(super) fn hash_msg(msg: &[u8]) -> G1Projective {
         G1Projective::hash::<ExpandMsgXmd<sha2::Sha256>>(msg, Self::DST)
