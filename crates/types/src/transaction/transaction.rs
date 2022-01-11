@@ -1,15 +1,19 @@
-// use zarb_crypto::hash::Hash32;
-// use zarb_crypto::signature::Signature;
-// use zarb_crypto::public_key::PublicKey;
+use zarb_crypto::hash::Hash32;
+use zarb_crypto::public_key::PublicKey;
+use zarb_crypto::signature::Signature;
 
-// struct Transaction<'a> {
-//     version: i32,
-//     stamp: Hash32,
-//     sequence: i32,
-//     fee: i64,
-//     payload_type: i32,
-//     payload: Vec<u8>,
-//     memo: String,
-//     publicKey: dyn PublicKey<'a, Signature = Type>,
-//     signature: dyn Signature<'a>,
-// }
+pub struct Transaction<'de, S, P>
+where
+    S: Signature<'de>,
+    P: PublicKey<'de>,
+{
+    pub version: i32,
+    pub stamp: Hash32,
+    pub sequence: i32,
+    pub fee: i64,
+    pub payload_type: i32,
+    pub payload: Vec<u8>,
+    pub memo: String,
+    pub public_key: Option<&'de P>,
+    pub signature: Option<&'de S>,
+}

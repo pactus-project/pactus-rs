@@ -3,6 +3,7 @@ pub mod block;
 pub mod certificate;
 pub mod error;
 pub mod params;
+pub mod transaction;
 pub mod tx;
 pub mod validator;
 
