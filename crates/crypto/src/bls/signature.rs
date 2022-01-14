@@ -1,19 +1,20 @@
 use crate::error::{Error, Result};
+use crate::signature::Signature;
 use bls12_381_plus::{ExpandMsgXmd, G1Affine, G1Projective};
 use group::Curve;
 
 const SIGNATURE_KEY_SIZE: usize = 48;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Signature(pub(super) G1Projective);
+pub struct BLSSignature(pub(super) G1Projective);
 
-impl<'a> crate::signature::Signature<'a> for Signature {
+impl Signature for BLSSignature {
     fn to_bytes(&self) -> Vec<u8> {
-        Signature::to_bytes(&self).to_vec()
+        BLSSignature::to_bytes(self).to_vec()
     }
 }
 
-impl Signature {
+impl BLSSignature {
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
         let bytes: &[u8; SIGNATURE_KEY_SIZE] =
             data.try_into().map_err(|_| Error::InvalidLength {
@@ -36,4 +37,4 @@ impl Signature {
     }
 }
 
-crate::impl_cbor!(Signature);
+crate::impl_cbor!(BLSSignature);

@@ -4,8 +4,10 @@ pub mod error;
 pub mod hash;
 pub mod public_key;
 pub mod secret_key;
+pub mod signatory;
 pub mod signature;
 pub mod sortition;
+pub mod stamp;
 
 macro_rules! impl_cbor {
     ($ty:ty) => {
@@ -32,7 +34,7 @@ macro_rules! impl_cbor {
                     )
                 })?;
                 <$ty>::from_bytes(data)
-                    .map_err(|_| minicbor::decode::Error::Message("invalid signature data"))
+                    .map_err(|_| minicbor::decode::Error::Message("invalid data"))
             }
         }
     };

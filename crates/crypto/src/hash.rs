@@ -2,6 +2,7 @@ use crate::error::{Error, Result};
 
 const HASH32_SIZE: usize = 32;
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Hash32([u8; HASH32_SIZE]);
 
 impl Hash32 {

@@ -1,5 +1,5 @@
 use minicbor::{Decode, Encode};
-use zarb_crypto::bls::signature::Signature;
+use zarb_crypto::bls::signature::BLSSignature;
 use zarb_crypto::hash::Hash32;
 
 #[derive(Encode, Decode)]
@@ -14,5 +14,9 @@ pub struct Certificate {
     #[n(4)]
     absentees: Vec<i32>,
     #[n(5)]
-    signature: Signature,
+    signature: BLSSignature,
+}
+
+impl Certificate {
+    crate::impl_from_to_bytes!(Certificate);
 }
