@@ -11,6 +11,8 @@ pub enum Error {
     InvalidLength { expected: usize, found: usize },
     #[error("Invalid payload type")]
     InvalidPayload(i8),
+    #[error("Invalid signature or public key")]
+    InvalidSignatory,
     #[error("Crypto error")]
     CryptoError(#[from] zarb_crypto::error::Error),
 }

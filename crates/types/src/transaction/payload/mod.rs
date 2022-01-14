@@ -1,6 +1,8 @@
 pub mod send;
 
-use crate::error::{Error, Result};
+use std::fmt::Debug;
+
+use crate::error::Result;
 use minicbor::{Decode, Encode};
 use zarb_crypto::address::Address;
 
@@ -33,7 +35,7 @@ pub enum Type {
 //     }
 // }
 
-pub trait Payload {
+pub trait Payload: Debug {
     fn to_bytes(&self) -> Result<Vec<u8>>;
     fn signer(&self) -> &Address;
     fn value(&self) -> i64;

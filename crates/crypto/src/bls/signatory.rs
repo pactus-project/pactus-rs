@@ -10,13 +10,12 @@ pub struct BLSSignatory {
 }
 
 impl crate::signatory::Signatory for BLSSignatory {
-
     fn verify(&self, msg: &[u8]) -> bool {
         self.pub_key.verify(&self.sig, msg)
     }
 
-    fn public_key(&self) -> &dyn PublicKey{
-&self.pub_key
+    fn public_key(&self) -> &dyn PublicKey {
+        &self.pub_key
     }
 
     fn signature(&self) -> &dyn Signature {

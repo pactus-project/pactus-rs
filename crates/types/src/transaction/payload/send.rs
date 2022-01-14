@@ -3,7 +3,7 @@ use crate::error::Result;
 use minicbor::{Decode, Encode};
 use zarb_crypto::address::Address;
 
-#[derive(Encode, Decode)]
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 #[cbor(map)]
 pub struct SendPayload {
     #[n(1)]

@@ -1,5 +1,5 @@
 use super::payload;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use minicbor::bytes::ByteVec;
 use minicbor::{Decode, Encode};
 use zarb_crypto::bls;
@@ -7,6 +7,7 @@ use zarb_crypto::bls::signatory::BLSSignatory;
 use zarb_crypto::signatory::Signatory;
 use zarb_crypto::stamp::Stamp;
 
+#[derive(Debug)]
 pub struct Transaction {
     pub stamp: Stamp,
     pub sequence: i32,
@@ -97,9 +98,33 @@ impl Transaction {
         Ok(minicbor::to_vec(raw)?)
     }
 
+    fn sign_bytes(&self) -> Result<Vec<u8>> {
+        let payload_data = ByteVec::from(self.payload.to_bytes()?);
+        let raw = RawTransaction {
+            version: 1,
+            stamp: self.stamp.clone(),
+            sequence: self.sequence,
+            fee: self.fee,
+            memo: self.memo.clone(),
+            payload_type: self.payload.payload_type(),
+            payload_data,
+            public_key_data: None,
+            signature_data: None,
+        };
+        Ok(minicbor::to_vec(raw)?)
+    }
+
     pub fn check_signature(&self) -> Result<()> {
-        let ok = self.signatory.as_ref().unwrap().as_ref().verify(&[1]);
-        Ok(())
+        match self.signatory.as_ref() {
+            Some(s) => {
+                if s.as_ref().verify(&self.sign_bytes()?) {
+                    Ok(())
+                } else {
+                    Err(Error::InvalidSignatory)
+                }
+            }
+            None => Err(Error::InvalidSignatory),
+        }
     }
 }
 
@@ -111,11 +136,13 @@ mod tests {
     fn test_decoding() {
         let buf1 = hex::decode(
             "a901010244e4f59ccd03186e041903e80501065833a3015501d75c059a4157d78f9b86741164037392de0fa53102550194f782f332649a4234b79216277e0b1594836313031903e8076c746573742073656e642d7478145860a4de42541ddeebfa6c4c8f008d2a64e6a2c8069096a5ad2fd807089a2f3ca8b71554365a01a2a3d5eee73f814b2aaeee0a49496e9222bc5cb4e9ffec219b4dca5091844ac1752286a524ca89928187ea60d0bdd6f10047d06f204bac5c215967155830b1c1b312df0ac1877c8daeb35eaf53c5008fb1de9654c698bab851b73d8730204c5c93c13c7d5d6b29ee439d1bdb7118",
-        )
-        .unwrap()
-        .to_vec();
+        ).unwrap();
+
+        let buf2 = hex::decode(
+            "a701010244e4f59ccd03186e041903e80501065833a3015501d75c059a4157d78f9b86741164037392de0fa53102550194f782f332649a4234b79216277e0b1594836313031903e8076c746573742073656e642d7478",
+        ).unwrap();
         let trx = Transaction::from_bytes(buf1.as_slice()).unwrap();
-        let buf2 = trx.to_bytes().unwrap();
-        assert_eq!(buf1, buf2);
+        assert_eq!(buf1, trx.to_bytes().unwrap());
+        assert_eq!(buf2, trx.sign_bytes().unwrap());
     }
 }
