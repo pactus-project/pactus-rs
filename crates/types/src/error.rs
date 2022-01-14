@@ -3,12 +3,16 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Invalid data length")]
-    InvalidLength { expected: usize, found: usize },
     #[error("CBOR decoding error")]
     DecodeError(String),
     #[error("CBOR encoding error")]
     EncodeError(String),
+    #[error("Invalid data length")]
+    InvalidLength { expected: usize, found: usize },
+    #[error("Invalid payload type")]
+    InvalidPayload(i8),
+    #[error("Crypto error")]
+    CryptoError(#[from] zarb_crypto::error::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

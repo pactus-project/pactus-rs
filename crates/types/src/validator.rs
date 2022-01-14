@@ -1,11 +1,11 @@
 use minicbor::{Decode, Encode};
-use zarb_crypto::bls::public_key::PublicKey;
+use zarb_crypto::bls::public_key::BLSPublicKey;
 
 #[derive(Encode, Decode)]
 #[cbor(map)]
 pub struct Validator {
     #[n(1)]
-    public_key: PublicKey,
+    public_key: BLSPublicKey,
     #[n(2)]
     number: i32,
     #[n(3)]
