@@ -1,4 +1,5 @@
 use super::{Payload, Type};
+use crate::error::Result;
 use minicbor::{Decode, Encode};
 use zarb_crypto::address::Address;
 
@@ -14,6 +15,9 @@ pub struct SendPayload {
 }
 
 impl Payload for SendPayload {
+    fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(minicbor::to_vec(self)?)
+    }
     fn signer(&self) -> &Address {
         &self.sender
     }
@@ -23,7 +27,7 @@ impl Payload for SendPayload {
     fn payload_type(&self) -> Type {
         Type::Send
     }
-    fn sanity_check(&self) -> crate::error::Result<()> {
+    fn sanity_check(&self) -> Result<()> {
         Ok(())
     }
     fn fingerprint(&self) -> String {

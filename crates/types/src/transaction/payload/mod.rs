@@ -34,9 +34,10 @@ pub enum Type {
 // }
 
 pub trait Payload {
+    fn to_bytes(&self) -> Result<Vec<u8>>;
     fn signer(&self) -> &Address;
     fn value(&self) -> i64;
     fn payload_type(&self) -> Type;
-    fn sanity_check(&self) -> crate::error::Result<()>;
+    fn sanity_check(&self) -> Result<()>;
     fn fingerprint(&self) -> String;
 }

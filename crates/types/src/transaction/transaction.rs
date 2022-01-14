@@ -18,7 +18,7 @@ pub struct Transaction {
 
 #[derive(Encode, Decode)]
 #[cbor(map)]
-pub struct RawTransaction {
+struct RawTransaction {
     #[n(1)]
     pub version: i32,
     #[n(2)]
@@ -30,13 +30,13 @@ pub struct RawTransaction {
     #[n(5)]
     pub payload_type: payload::Type,
     #[n(6)]
-    pub payload: ByteVec,
+    pub payload_data: ByteVec,
     #[n(7)]
     pub memo: String,
     #[n(20)]
-    pub public_key: Option<ByteVec>,
+    pub public_key_data: Option<ByteVec>,
     #[n(21)]
-    pub signature: Option<ByteVec>,
+    pub signature_data: Option<ByteVec>,
 }
 
 impl Transaction {
@@ -44,15 +44,15 @@ impl Transaction {
         let raw: RawTransaction = minicbor::decode(data)?;
         let payload = Box::new(match raw.payload_type {
             payload::Type::Send => {
-                minicbor::decode::<payload::send::SendPayload>(raw.payload.as_ref())?
+                minicbor::decode::<payload::send::SendPayload>(raw.payload_data.as_ref())?
             }
-            _ => minicbor::decode::<payload::send::SendPayload>(raw.payload.as_ref())?,
+            _ => minicbor::decode::<payload::send::SendPayload>(raw.payload_data.as_ref())?,
         });
 
-        let signatory: Option<Box<dyn Signatory>> = match raw.signature {
+        let signatory: Option<Box<dyn Signatory>> = match raw.signature_data {
             Some(data) => {
                 let sig = bls::signature::BLSSignature::from_bytes(data.as_ref())?;
-                match raw.public_key {
+                match raw.public_key_data {
                     Some(data) => {
                         let pub_key = bls::public_key::BLSPublicKey::from_bytes(data.as_ref())?;
 
@@ -73,11 +73,31 @@ impl Transaction {
         })
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
-        todo!()
+    pub fn to_bytes(&self) -> Result<Vec<u8>> {
+        let payload_data = ByteVec::from(self.payload.to_bytes()?);
+        let public_key_data = match self.signatory.as_ref() {
+            Some(s) => Some(ByteVec::from(s.public_key().to_bytes())),
+            None => None,
+        };
+        let signature_data = match self.signatory.as_ref() {
+            Some(s) => Some(ByteVec::from(s.signature().to_bytes())),
+            None => None,
+        };
+        let raw = RawTransaction {
+            version: 1,
+            stamp: self.stamp.clone(),
+            sequence: self.sequence,
+            fee: self.fee,
+            memo: self.memo.clone(),
+            payload_type: self.payload.payload_type(),
+            payload_data,
+            public_key_data,
+            signature_data,
+        };
+        Ok(minicbor::to_vec(raw)?)
     }
 
-    fn check_signature(&self) -> Result<()> {
+    pub fn check_signature(&self) -> Result<()> {
         let ok = self.signatory.as_ref().unwrap().as_ref().verify(&[1]);
         Ok(())
     }
@@ -95,8 +115,7 @@ mod tests {
         .unwrap()
         .to_vec();
         let trx = Transaction::from_bytes(buf1.as_slice()).unwrap();
-        //let mut buf2 = Vec::new();
-        //minicbor::encode(&trx, &mut buf2).unwrap();
-        //assert_eq!(buf1, buf2);
+        let buf2 = trx.to_bytes().unwrap();
+        assert_eq!(buf1, buf2);
     }
 }

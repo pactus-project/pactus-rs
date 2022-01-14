@@ -2,6 +2,7 @@ use crate::error::{Error, Result};
 
 const STAMP_SIZE: usize = 4;
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Stamp([u8; STAMP_SIZE]);
 
 impl Stamp {

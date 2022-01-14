@@ -2,10 +2,8 @@ pub mod account;
 pub mod block;
 pub mod certificate;
 pub mod error;
-pub mod lazy;
 pub mod params;
 pub mod transaction;
-pub mod tx;
 pub mod validator;
 
 macro_rules! impl_from_to_bytes {
@@ -15,9 +13,7 @@ macro_rules! impl_from_to_bytes {
         }
 
         pub fn to_bytes(&self) -> crate::error::Result<Vec<u8>> {
-            let mut buf = Vec::new();
-            minicbor::encode(&self, &mut buf)?;
-            Ok(buf)
+            Ok(minicbor::to_vec(&self)?)
         }
     };
 }

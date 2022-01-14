@@ -16,3 +16,7 @@ pub struct Certificate {
     #[n(5)]
     signature: BLSSignature,
 }
+
+impl Certificate {
+    crate::impl_from_to_bytes!(Certificate);
+}
