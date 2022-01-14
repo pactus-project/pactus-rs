@@ -50,7 +50,7 @@ impl BLSSecretKey {
     }
 }
 
-crate::impl_cbor!(BLSSecretKey);
+super::impl_cbor!(BLSSecretKey);
 
 #[cfg(test)]
 mod tests {

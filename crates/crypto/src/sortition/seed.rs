@@ -12,8 +12,8 @@ impl Seed {
         Ok(Self(data))
     }
 
-    pub fn to_bytes(&self) -> [u8; SEED_SIZE] {
-        self.0
+    pub fn as_bytes(&self) -> &[u8; SEED_SIZE] {
+        &self.0
     }
 }
 

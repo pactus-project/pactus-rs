@@ -14,8 +14,8 @@ impl Stamp {
         Ok(Self(*bytes))
     }
 
-    pub fn to_bytes(&self) -> [u8; STAMP_SIZE] {
-        self.0
+    pub fn as_bytes(&self) -> &[u8; STAMP_SIZE] {
+        &self.0
     }
 }
 

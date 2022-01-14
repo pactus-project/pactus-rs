@@ -46,4 +46,4 @@ impl BLSPublicKey {
     }
 }
 
-crate::impl_cbor!(BLSPublicKey);
+super::impl_cbor!(BLSPublicKey);
