@@ -3088,6 +3088,7 @@ dependencies = [
  "async-trait",
  "cid",
  "futures",
+ "futures-util",
  "hex",
  "libp2p",
  "log",

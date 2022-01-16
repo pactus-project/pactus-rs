@@ -6,12 +6,13 @@ use super::transport;
 use crate::error::Error;
 use async_std::channel::{Receiver, Sender};
 use async_std::stream;
-use async_std::stream::StreamExt;
+use futures_util::stream::StreamExt;
 use behaviour::{Behaviour, BehaviourEventOut};
 use futures::select;
 pub use libp2p::gossipsub::{Topic, TopicHash};
 use libp2p::identity;
 use libp2p::Swarm;
+use libp2p::swarm::SwarmEvent;
 use log::{error, info, trace, warn};
 use std::time::Duration;
 
@@ -92,21 +93,24 @@ impl Network {
             select! {
                 swarm_event = swarm_stream.next() => match swarm_event {
                     Some(event) => match event {
-                        BehaviourEventOut::PeerConnected(peer_id) =>{
+                        SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) =>{
                             info!("Peer dialed {:?}", peer_id);
                             self.event_sender.send(Event::PeerConnected(peer_id)).await;
                         }
-                        BehaviourEventOut::PeerDisconnected(peer_id) =>{
+                        SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) =>{
                             info!("Peer disconnected {:?}", peer_id);
                             self.event_sender.send(Event::PeerDisconnected(peer_id)).await;
                         }
-                        BehaviourEventOut::GossipMessage {
+                        SwarmEvent::Behaviour(BehaviourEventOut::GossipMessage {
                             source,
                             topic,
                             message,
-                        } => {
+                        }) => {
                             trace!("Got a Gossip message from {:?}: {:?}", source, message);
 
+                        }
+                        _ => {
+                            continue;
                         }
                     }
                     None => { break; }
@@ -124,7 +128,7 @@ impl Network {
                     None => { break; }
                 },
                 interval_event = interval.next() => if interval_event.is_some() {
-                    trace!("Peers connected: {}", swarm_stream.get_ref().peers().len());
+                    trace!("Peers connected: {}", swarm_stream.get_mut().behaviour_mut().peers().len());
                 }
             }
         }
