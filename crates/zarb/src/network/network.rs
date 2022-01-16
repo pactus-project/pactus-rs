@@ -9,6 +9,7 @@ use async_std::stream;
 use futures_util::stream::StreamExt;
 use behaviour::{Behaviour, BehaviourEventOut};
 use futures::select;
+use libp2p::core::network::NetworkEvent;
 pub use libp2p::gossipsub::{Topic, TopicHash};
 use libp2p::identity;
 use libp2p::Swarm;
@@ -24,6 +25,13 @@ pub struct Network {
     event_receiver: Receiver<Event>,
     event_sender: Sender<Event>,
 }
+
+async fn emit_event(sender: &Sender<Event>, event: Event) {
+    if sender.send(event).await.is_err() {
+        error!("Failed to emit event: Network channel receiver has been dropped");
+    }
+}
+
 
 impl Network {
     pub fn new(config: Config) -> Result<Self, Error> {
@@ -95,11 +103,11 @@ impl Network {
                     Some(event) => match event {
                         SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) =>{
                             info!("Peer dialed {:?}", peer_id);
-                            self.event_sender.send(Event::PeerConnected(peer_id)).await;
+                            emit_event(&self.event_sender, Event::PeerConnected(peer_id)).await;
                         }
                         SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) =>{
                             info!("Peer disconnected {:?}", peer_id);
-                            self.event_sender.send(Event::PeerDisconnected(peer_id)).await;
+                            emit_event(&self.event_sender, Event::PeerDisconnected(peer_id)).await;
                         }
                         SwarmEvent::Behaviour(BehaviourEventOut::GossipMessage {
                             source,

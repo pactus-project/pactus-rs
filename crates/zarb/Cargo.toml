@@ -25,7 +25,7 @@ libp2p = { version = "0.41", default-features = false, features = [
 ] }
 futures = "0.3"
 async-trait = "0.1"
-async-std = { version = "1.10", features = ["unstable"] }
+async-std = { version = "1.10", features = ["unstable", "attributes"] }
 serde = "1.0"
 log = "0.4"
 void = "1.0"
@@ -34,3 +34,5 @@ futures-util = "0.3"
 
 [dev-dependencies]
 hex = "0.4"
+simple_logger = "1.16"
+portpicker = "0.1"

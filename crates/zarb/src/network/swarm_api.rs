@@ -30,12 +30,12 @@ impl SwarmApi {
 }
 
 impl NetworkBehaviour for SwarmApi {
-    type ProtocolsHandler = ToggleIntoProtoHandler<DummyProtocolsHandler>;
+    type ProtocolsHandler = DummyProtocolsHandler;
     type OutEvent = SwarmEvent;
 
     fn new_handler(&mut self) -> Self::ProtocolsHandler {
         trace!("new_handler");
-        todo!()
+        Default::default()
     }
 
     fn addresses_of_peer(&mut self, _peer_id: &PeerId) -> Vec<Multiaddr> {
