@@ -1,5 +1,5 @@
 use minicbor::{Decode, Encode};
-use zarb_crypto::address::Address;
+use crate::address::Address;
 
 #[derive(Encode, Decode)]
 #[cbor(map)]

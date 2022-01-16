@@ -2,10 +2,10 @@ use super::payload;
 use crate::error::{Error, Result};
 use minicbor::bytes::ByteVec;
 use minicbor::{Decode, Encode};
-use zarb_crypto::bls;
-use zarb_crypto::bls::signatory::BLSSignatory;
-use zarb_crypto::signatory::Signatory;
-use zarb_crypto::stamp::Stamp;
+use crate::crypto::bls;
+use crate::crypto::bls::signatory::BLSSignatory;
+use crate::crypto::signatory::Signatory;
+use crate::stamp::Stamp;
 
 #[derive(Debug)]
 pub struct Transaction {
@@ -83,7 +83,7 @@ impl Transaction {
         let signature_data = self
             .signatory
             .as_ref()
-            .map(|s| ByteVec::from(s.public_key().to_bytes()));
+            .map(|s| ByteVec::from(s.signature().to_bytes()));
 
         let raw = RawTransaction {
             version: 1,

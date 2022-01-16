@@ -1,8 +1,8 @@
 use crate::certificate::Certificate;
 use minicbor::{Decode, Encode};
-use zarb_crypto::address::Address;
-use zarb_crypto::hash::Hash32;
-use zarb_crypto::sortition::seed::Seed;
+use crate::address::Address;
+use crate::hash::Hash32;
+use crate::sortition::seed::Seed;
 
 #[derive(Encode, Decode)]
 #[cbor(map)]

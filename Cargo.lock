@@ -3170,12 +3170,11 @@ dependencies = [
  "simple_logger",
  "thiserror",
  "void",
- "zarb-crypto",
  "zarb-types",
 ]
 
 [[package]]
-name = "zarb-crypto"
+name = "zarb-types"
 version = "0.1.0"
 dependencies = [
  "blake2b_simd 1.0.0",
@@ -3185,16 +3184,6 @@ dependencies = [
  "minicbor",
  "sha2",
  "thiserror",
-]
-
-[[package]]
-name = "zarb-types"
-version = "0.1.0"
-dependencies = [
- "hex",
- "minicbor",
- "thiserror",
- "zarb-crypto",
 ]
 
 [[package]]

@@ -1,9 +1,7 @@
 use super::public_key::BLSPublicKey;
 use super::signature::BLSSignature;
-use crate::{
-    error::{Error, Result},
-    secret_key::SecretKey,
-};
+use crate::error::{Error, Result};
+use crate::crypto::secret_key::SecretKey;
 use bls12_381_plus::{G2Projective, Scalar};
 
 const SECRET_KEY_SIZE: usize = 32;
@@ -54,7 +52,7 @@ super::impl_cbor!(BLSSecretKey);
 
 #[cfg(test)]
 mod tests {
-    use crate::secret_key::SecretKey;
+    use crate::crypto::secret_key::SecretKey;
 
     #[test]
     fn test_decoding() {

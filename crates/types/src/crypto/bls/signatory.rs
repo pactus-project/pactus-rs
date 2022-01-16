@@ -1,7 +1,8 @@
 use super::public_key::BLSPublicKey;
 use super::signature::BLSSignature;
-use crate::public_key::PublicKey;
-use crate::signature::Signature;
+use crate::crypto::public_key::PublicKey;
+use crate::crypto::signature::Signature;
+use crate::crypto::signatory::Signatory;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BLSSignatory {
@@ -9,7 +10,7 @@ pub struct BLSSignatory {
     pub sig: BLSSignature,
 }
 
-impl crate::signatory::Signatory for BLSSignatory {
+impl Signatory for BLSSignatory {
     fn verify(&self, msg: &[u8]) -> bool {
         self.pub_key.verify(&self.sig, msg)
     }
