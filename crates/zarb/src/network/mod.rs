@@ -1,17 +1,14 @@
-pub mod behaviour;
+#![recursion_limit = "1024"]
+
+mod behaviour;
 pub mod config;
-pub mod service;
-pub mod transport;
-///pub mod discovery;
+pub mod event;
+pub mod message;
+pub mod network;
+mod swarm_api;
+mod transport;
 
-use crate::error::Result;
-use async_trait::async_trait;
-use libp2p::PeerId;
-
-#[async_trait]
-pub trait Network {
-    fn start(&self) -> Result<()>;
-    fn stop(&self);
-    fn close_connection(&self, pid: PeerId);
-    fn self_id(&self) -> PeerId;
-}
+pub use self::config::*;
+pub use self::event::*;
+pub use self::message::*;
+pub use self::network::*;

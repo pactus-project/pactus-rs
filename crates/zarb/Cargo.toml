@@ -21,12 +21,15 @@ libp2p = { version = "0.41", default-features = false, features = [
     "dns-async-std",
     "mplex",
     "request-response",
-    "websocket"
+    "websocket",
 ] }
 futures = "0.3"
 async-trait = "0.1"
-async-std = "1.10"
+async-std = { version = "1.10", features = ["unstable"] }
+serde = "1.0"
 log = "0.4"
+void = "1.0"
+cid = "0.7"
 
 [dev-dependencies]
 hex = "0.4"

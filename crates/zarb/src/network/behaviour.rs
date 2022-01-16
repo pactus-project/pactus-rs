@@ -1,64 +1,51 @@
-use futures::channel::oneshot::{self, Sender as OneShotSender};
-use futures::{prelude::*, stream::FuturesUnordered};
-use libp2p::ping::{Ping, PingEvent};
-use libp2p::request_response::{
-    ProtocolSupport, RequestId, RequestResponse, RequestResponseConfig, RequestResponseEvent,
-    RequestResponseMessage, ResponseChannel,
-};
-use libp2p::swarm::{
-    NetworkBehaviour, NetworkBehaviourAction, NetworkBehaviourEventProcess, PollParameters,
-};
-use libp2p::NetworkBehaviour;
-use libp2p::{core::identity::Keypair, kad::QueryId};
-use libp2p::{core::PeerId, gossipsub::GossipsubMessage};
+use super::config::Config;
+use super::swarm_api::{SwarmApi, SwarmEvent};
 use libp2p::{
+    core::{identity::Keypair, PeerId},
     gossipsub::{
-        error::PublishError, error::SubscriptionError, Gossipsub, GossipsubConfigBuilder,
-        GossipsubEvent, IdentTopic as Topic, MessageAuthenticity, MessageId, TopicHash,
-        ValidationMode,
+        error::{PublishError, SubscriptionError},
+        Gossipsub, GossipsubConfigBuilder, GossipsubEvent, GossipsubMessage, IdentTopic,
+        MessageAuthenticity, MessageId, TopicHash,
     },
-    Multiaddr,
-};
-use libp2p::{
     identify::{Identify, IdentifyConfig, IdentifyEvent},
-    ping::{PingFailure, PingSuccess},
+    kad::{record::store::MemoryStore, Kademlia, KademliaConfig, KademliaEvent, QueryId},
+    mdns::{Mdns, MdnsEvent},
+    multiaddr::Protocol,
+    ping::{Ping, PingEvent, PingFailure, PingSuccess},
+    swarm::{
+        toggle::Toggle, NetworkBehaviour, NetworkBehaviourAction, NetworkBehaviourEventProcess,
+        PollParameters,
+    },
+    NetworkBehaviour,
 };
 use log::{debug, trace, warn};
-use zarb_crypto::hash::Hash32;
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
-use std::convert::TryFrom;
-use std::error::Error;
-use std::pin::Pin;
+use std::hash::{Hash, Hasher};
 use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::{collections::HashMap, convert::TryInto};
 use std::{task::Context, task::Poll};
-//use tiny_cid::Cid as Cid2;
 
-use super::config::Config;
-//use super::discovery::{DiscoveryBehaviour, DiscoveryOut};
-
-
-/// Libp2p behaviour for the Forest node. This handles all sub protocols needed for a Filecoin node.
 #[derive(NetworkBehaviour)]
 #[behaviour(
-    out_event = "ForestBehaviourEvent",
+    out_event = "BehaviourEventOut",
     poll_method = "poll",
     event_process = true
 )]
-pub(crate) struct ZarbBehaviour {
+pub struct Behaviour {
+    swarm_api: SwarmApi,
     gossipsub: Gossipsub,
-  //  discovery: DiscoveryBehaviour,
+    mdns: Toggle<Mdns>,
     ping: Ping,
     identify: Identify,
+    kademlia: Toggle<Kademlia<MemoryStore>>,
     #[behaviour(ignore)]
-    events: Vec<ForestBehaviourEvent>,
+    peers: HashSet<PeerId>,
+    #[behaviour(ignore)]
+    events: Vec<BehaviourEventOut>,
 }
 
-
-/// Event type which is emitted from the [ForestBehaviour] into the libp2p service.
 #[derive(Debug)]
-pub(crate) enum ForestBehaviourEvent {
+pub enum BehaviourEventOut {
     PeerConnected(PeerId),
     PeerDisconnected(PeerId),
     GossipMessage {
@@ -68,51 +55,138 @@ pub(crate) enum ForestBehaviourEvent {
     },
 }
 
-
-impl NetworkBehaviourEventProcess<GossipsubEvent> for ZarbBehaviour {
-    fn inject_event(&mut self, message: GossipsubEvent) {
-        if let GossipsubEvent::Message {
-            propagation_source,
-            message,
-            message_id: _,
-        } = message
-        {
-            self.events.push(ForestBehaviourEvent::GossipMessage {
-                source: propagation_source,
-                topic: message.topic,
-                message: message.data,
-            })
+impl Behaviour {
+    fn poll(
+        &mut self,
+        _: &mut Context,
+        _: &mut impl PollParameters,
+    ) -> Poll<
+        NetworkBehaviourAction<
+            <Self as NetworkBehaviour>::OutEvent,
+            <Self as NetworkBehaviour>::ProtocolsHandler,
+        >,
+    > {
+        if !self.events.is_empty() {
+            return Poll::Ready(NetworkBehaviourAction::GenerateEvent(self.events.remove(0)));
         }
+        Poll::Pending
+    }
+
+    pub fn new(local_key: &Keypair, config: &Config) -> Self {
+        // To content-address message, we can take the hash of message and use it as an ID.
+        let message_id_fn = |message: &GossipsubMessage| {
+            let mut s = DefaultHasher::new();
+            message.data.hash(&mut s);
+            MessageId::from(s.finish().to_string())
+        };
+
+        let local_peer_id = local_key.public().to_peer_id();
+        let gossipsub_config = GossipsubConfigBuilder::default()
+            .heartbeat_interval(Duration::from_secs(10))
+            .message_id_fn(message_id_fn) // content-address messages. No two messages of the same content will be propagated.
+            .build();
+
+        // Kademlia config
+        let store = MemoryStore::new(local_peer_id.to_owned());
+        let mut kad_config = KademliaConfig::default();
+        let network = format!("/zarb/kad/{}/kad/1.0.0", config.network_name);
+        kad_config.set_protocol_name(network.as_bytes().to_vec());
+        let kademlia_opt = if config.kademlia {
+            let mut kademlia = Kademlia::with_config(local_peer_id.to_owned(), store, kad_config);
+            for multiaddr in config.bootstrap_peers.iter() {
+                let mut addr = multiaddr.to_owned();
+                if let Some(Protocol::P2p(mh)) = addr.pop() {
+                    let peer_id = PeerId::from_multihash(mh).unwrap();
+                    kademlia.add_address(&peer_id, addr);
+                } else {
+                    warn!("Could not add addr {} to Kademlia DHT", multiaddr)
+                }
+            }
+            if let Err(e) = kademlia.bootstrap() {
+                warn!("Kademlia bootstrap failed: {}", e);
+            }
+            Some(kademlia)
+        } else {
+            None
+        };
+
+        let mdns_opt = if config.mdns {
+            Some(async_std::task::block_on(async {
+                Mdns::new(Default::default())
+                    .await
+                    .expect("Could not start mDNS")
+            }))
+        } else {
+            None
+        };
+
+        let identify = Identify::new(IdentifyConfig::new("zarb/0.1.0".into(), local_key.public()));
+
+        let mut gs_config_builder = GossipsubConfigBuilder::default();
+        // gs_config_builder.message_id_fn(|msg: &GossipsubMessage| {
+        //     let s = blake2b_256(&msg.data);
+        //     MessageId::from(s)
+        // });
+        let gossipsub_config = gs_config_builder.build().unwrap();
+        let mut gossipsub = Gossipsub::new(
+            MessageAuthenticity::Signed(local_key.clone()),
+            gossipsub_config,
+        )
+        .unwrap();
+
+        let swarm_api = SwarmApi::new();
+        Behaviour {
+            swarm_api: swarm_api,
+            gossipsub,
+            mdns: mdns_opt.into(),
+            ping: Ping::default(),
+            identify,
+            kademlia: kademlia_opt.into(),
+            events: vec![],
+            peers: Default::default(),
+        }
+    }
+
+    /// Bootstrap Kademlia network
+    pub fn bootstrap(&mut self) -> Result<QueryId, String> {
+        if let Some(active_kad) = self.kademlia.as_mut() {
+            active_kad.bootstrap().map_err(|e| e.to_string())
+        } else {
+            Err("Kademlia is not activated".to_string())
+        }
+    }
+
+    /// Publish data over the gossip network.
+    pub fn publish(
+        &mut self,
+        topic: IdentTopic,
+        data: impl Into<Vec<u8>>,
+    ) -> Result<MessageId, PublishError> {
+        self.gossipsub.publish(topic, data)
+    }
+
+    /// Subscribe to a gossip topic.
+    pub fn subscribe(&mut self, topic: &IdentTopic) -> Result<bool, SubscriptionError> {
+        self.gossipsub.subscribe(topic)
+    }
+
+    /// Adds peer to the peer set.
+    pub fn add_peer(&mut self, peer_id: PeerId) {
+        self.peers.insert(peer_id.clone());
+    }
+
+    /// Adds peer to the peer set.
+    pub fn remove_peer(&mut self, peer_id: &PeerId) {
+        self.peers.remove(peer_id);
+    }
+
+    /// Adds peer to the peer set.
+    pub fn peers(&self) -> &HashSet<PeerId> {
+        &self.peers
     }
 }
 
-impl NetworkBehaviourEventProcess<PingEvent> for ZarbBehaviour {
-    fn inject_event(&mut self, event: PingEvent) {
-        match event.result {
-            Ok(PingSuccess::Ping { rtt }) => {
-                trace!(
-                    "PingSuccess::Ping rtt to {} is {} ms",
-                    event.peer.to_base58(),
-                    rtt.as_millis()
-                );
-            }
-            Ok(PingSuccess::Pong) => {
-                trace!("PingSuccess::Pong from {}", event.peer.to_base58());
-            }
-            Err(PingFailure::Timeout) => {
-                debug!("PingFailure::Timeout {}", event.peer.to_base58());
-            }
-            Err(PingFailure::Other { error }) => {
-                debug!("PingFailure::Other {}: {}", event.peer.to_base58(), error);
-            }
-            Err(PingFailure::Unsupported) => {
-                debug!("PingFailure::Unsupported {}", event.peer.to_base58());
-            }
-        }
-    }
-}
-
-impl NetworkBehaviourEventProcess<IdentifyEvent> for ZarbBehaviour {
+impl NetworkBehaviourEventProcess<IdentifyEvent> for Behaviour {
     fn inject_event(&mut self, event: IdentifyEvent) {
         match event {
             IdentifyEvent::Received { peer_id, info } => {
@@ -130,117 +204,96 @@ impl NetworkBehaviourEventProcess<IdentifyEvent> for ZarbBehaviour {
     }
 }
 
-
-impl ZarbBehaviour {
-    /// Consumes the events list when polled.
-    // fn poll(
-    //     &mut self,
-    //     cx: &mut Context,
-    //     _: &mut impl PollParameters,
-    // ) -> Poll<
-    //     NetworkBehaviourAction<
-    //         <Self as NetworkBehaviour>::OutEvent,
-    //         <Self as NetworkBehaviour>::ProtocolsHandler,
-    //     >,
-    // > {
-    //     // Poll to see if any response is ready to be sent back.
-    //     while let Poll::Ready(Some(outcome)) = self.cx_pending_responses.poll_next_unpin(cx) {
-    //         let RequestProcessingOutcome {
-    //             inner_channel,
-    //             response,
-    //         } = match outcome {
-    //             Some(outcome) => outcome,
-    //             // The response builder was too busy and thus the request was dropped. This is
-    //             // later on reported as a `InboundFailure::Omission`.
-    //             None => break,
-    //         };
-    //         if self
-    //             .chain_exchange
-    //             .send_response(inner_channel, response)
-    //             .is_err()
-    //         {
-    //             // TODO can include request id from RequestProcessingOutcome
-    //             warn!("failed to send chain exchange response");
-    //         }
-    //     }
-    //     if !self.events.is_empty() {
-    //         return Poll::Ready(NetworkBehaviourAction::GenerateEvent(self.events.remove(0)));
-    //     }
-    //     Poll::Pending
-    // }
-
-    pub fn new(local_key: &Keypair, config: &Config) -> Self {
-        let mut gs_config_builder = GossipsubConfigBuilder::default();
-        // TODO
-        // gs_config_builder.max_transmit_size(1 << 20);
-        // gs_config_builder.validation_mode(ValidationMode::Strict);
-        // gs_config_builder.message_id_fn(|msg: &GossipsubMessage| {
-        //     let s = Hash32::new(&msg.data);
-        //     MessageId::from(s.to_bytes())
-        // });
-
-        let gossipsub_config = gs_config_builder.build().unwrap();
-        let mut gossipsub = Gossipsub::new(
-            MessageAuthenticity::Signed(local_key.clone()),
-            gossipsub_config,
-        )
-        .unwrap();
-
-        // gossipsub
-        //     .with_peer_score(
-        //         build_peer_score_params(network_name),
-        //         build_peer_score_threshold(),
-        //     )
-        //     .unwrap();
-
-        // let mut discovery_config = DiscoveryConfig::new(local_key.public(), network_name);
-        // discovery_config
-        //     .with_mdns(config.mdns)
-        //     .with_kademlia(config.kademlia)
-        //     .with_user_defined(config.bootstrap_peers.clone())
-        //     // TODO allow configuring this through config.
-        //     .discovery_limit(config.target_peer_count as u64);
-
-
-        let mut req_res_config = RequestResponseConfig::default();
-        req_res_config.set_request_timeout(Duration::from_secs(20));
-        req_res_config.set_connection_keep_alive(Duration::from_secs(20));
-
-        ZarbBehaviour {
-            gossipsub,
-           // discovery: discovery_config.finish(),
-            ping: Ping::default(),
-            identify: Identify::new(IdentifyConfig::new("ipfs/0.1.0".into(), local_key.public())),
-            events: vec![],
+impl NetworkBehaviourEventProcess<MdnsEvent> for Behaviour {
+    fn inject_event(&mut self, event: MdnsEvent) {
+        match event {
+            MdnsEvent::Discovered(list) => {
+                for (peer, addr) in list {
+                    trace!("mdns: Discovered peer {}", peer.to_base58());
+                    self.add_peer(peer.clone());
+                    self.kademlia.as_mut().unwrap().add_address(&peer, addr);
+                }
+            }
+            MdnsEvent::Expired(list) => {
+                if self.mdns.is_enabled() {
+                    for (peer, _) in list {
+                        if !self.mdns.as_ref().unwrap().has_node(&peer) {
+                            self.remove_peer(&peer);
+                        }
+                    }
+                }
+            }
         }
     }
+}
 
-    /// Bootstrap Kademlia network
-    // pub fn bootstrap(&mut self) -> Result<QueryId, String> {
-    //     self.discovery.bootstrap()
-    // }
-
-    /// Publish data over the gossip network.
-    pub fn publish(
-        &mut self,
-        topic: Topic,
-        data: impl Into<Vec<u8>>,
-    ) -> Result<MessageId, PublishError> {
-        self.gossipsub.publish(topic, data)
+impl NetworkBehaviourEventProcess<KademliaEvent> for Behaviour {
+    fn inject_event(&mut self, event: KademliaEvent) {
+        match event {
+            KademliaEvent::RoutingUpdated { peer, .. } => {
+                self.add_peer(peer);
+            }
+            event => {
+                trace!("kad: {:?}", event);
+            }
+        }
     }
+}
 
-    /// Subscribe to a gossip topic.
-    pub fn subscribe(&mut self, topic: &Topic) -> Result<bool, SubscriptionError> {
-        self.gossipsub.subscribe(topic)
+impl NetworkBehaviourEventProcess<GossipsubEvent> for Behaviour {
+    fn inject_event(&mut self, message: GossipsubEvent) {
+        if let GossipsubEvent::Message {
+            propagation_source,
+            message,
+            message_id: _,
+        } = message
+        {
+            self.events.push(BehaviourEventOut::GossipMessage {
+                source: propagation_source,
+                topic: message.topic,
+                message: message.data,
+            })
+        }
     }
+}
 
-    // /// Returns a set of peer ids
-    // pub fn peers(&mut self) -> &HashSet<PeerId> {
-    //     self.discovery.peers()
-    // }
+impl NetworkBehaviourEventProcess<PingEvent> for Behaviour {
+    fn inject_event(&mut self, event: PingEvent) {
+        match event.result {
+            Result::Ok(PingSuccess::Ping { rtt }) => {
+                trace!(
+                    "PingSuccess::Ping rtt to {} is {} ms",
+                    event.peer.to_base58(),
+                    rtt.as_millis()
+                );
+            }
+            Result::Ok(PingSuccess::Pong) => {
+                trace!("PingSuccess::Pong from {}", event.peer.to_base58());
+            }
+            Result::Err(PingFailure::Timeout) => {
+                debug!("PingFailure::Timeout {}", event.peer.to_base58());
+            }
+            Result::Err(PingFailure::Unsupported) => {
+                debug!("PingFailure::Unsupported {}", event.peer.to_base58());
+            }
+            Result::Err(PingFailure::Other { error }) => {
+                debug!("PingFailure::Other {}: {}", event.peer.to_base58(), error);
+            }
+        }
+    }
+}
 
-    // /// Returns a map of peer ids and their multiaddresses
-    // pub fn peer_addresses(&mut self) -> &HashMap<PeerId, Vec<Multiaddr>> {
-    //     self.discovery.peer_addresses()
-    // }
+impl NetworkBehaviourEventProcess<<SwarmApi as libp2p::swarm::NetworkBehaviour>::OutEvent>
+    for Behaviour
+{
+    fn inject_event(&mut self, event: <SwarmApi as libp2p::swarm::NetworkBehaviour>::OutEvent) {
+        match event {
+            SwarmEvent::PeerConnected(peer_id) => {
+                self.events.push(BehaviourEventOut::PeerConnected(peer_id))
+            }
+            SwarmEvent::PeerDisconnected(peer_id) => self
+                .events
+                .push(BehaviourEventOut::PeerDisconnected(peer_id)),
+        }
+    }
 }

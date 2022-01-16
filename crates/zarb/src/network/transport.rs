@@ -4,8 +4,10 @@ use libp2p::{
 };
 use std::time::Duration;
 
+/// Builds the transport stack that LibP2P will communicate over
+
 /// Builds the transport stack that LibP2P will communicate over.
-pub fn build_transport(local_key: Keypair) -> Boxed<(PeerId, StreamMuxerBox)> {
+pub fn build_transport(local_key: &Keypair) -> Boxed<(PeerId, StreamMuxerBox)> {
     let transport = libp2p::tcp::TcpConfig::new().nodelay(true);
     let transport = libp2p::websocket::WsConfig::new(transport.clone()).or_transport(transport);
     let transport = async_std::task::block_on(libp2p::dns::DnsConfig::system(transport)).unwrap();

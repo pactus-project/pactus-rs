@@ -12,7 +12,7 @@ pub enum Error {
     #[error("LibP2P multiaddr error")]
     LibP2PMultiaddr(#[from] libp2p::multiaddr::Error),
     #[error("LibP2P transport error")]
-    LibP2PTransportError(#[from] libp2p::TransportError<std::io::Error>)
+    LibP2PTransportError(#[from] libp2p::TransportError<std::io::Error>),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
