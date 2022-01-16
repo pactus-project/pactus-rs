@@ -76,14 +76,15 @@ impl Transaction {
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
         let payload_data = ByteVec::from(self.payload.to_bytes()?);
-        let public_key_data = match self.signatory.as_ref() {
-            Some(s) => Some(ByteVec::from(s.public_key().to_bytes())),
-            None => None,
-        };
-        let signature_data = match self.signatory.as_ref() {
-            Some(s) => Some(ByteVec::from(s.signature().to_bytes())),
-            None => None,
-        };
+        let public_key_data = self
+            .signatory
+            .as_ref()
+            .map(|s| ByteVec::from(s.public_key().to_bytes()));
+        let signature_data = self
+            .signatory
+            .as_ref()
+            .map(|s| ByteVec::from(s.public_key().to_bytes()));
+
         let raw = RawTransaction {
             version: 1,
             stamp: self.stamp.clone(),

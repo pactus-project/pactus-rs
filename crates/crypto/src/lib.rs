@@ -19,7 +19,7 @@ macro_rules! impl_cbor {
             where
                 W: minicbor::encode::Write,
             {
-                e.bytes(&self.to_bytes())?;
+                e.bytes(self.as_bytes())?;
                 Ok(())
             }
         }
@@ -28,12 +28,7 @@ macro_rules! impl_cbor {
             fn decode(
                 d: &mut minicbor::Decoder<'a>,
             ) -> core::result::Result<$ty, minicbor::decode::Error> {
-                let data = d.bytes()?.try_into().map_err(|_| {
-                    minicbor::decode::Error::Message(
-                        "byte slice length does not match expected length",
-                    )
-                })?;
-                <$ty>::from_bytes(data)
+                <$ty>::from_bytes(d.bytes()?)
                     .map_err(|_| minicbor::decode::Error::Message("invalid data"))
             }
         }
