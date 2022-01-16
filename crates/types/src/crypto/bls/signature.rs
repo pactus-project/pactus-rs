@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::signature::Signature;
+use crate::crypto::signature::Signature;
 use bls12_381_plus::{ExpandMsgXmd, G1Affine, G1Projective};
 use group::Curve;
 

@@ -4,7 +4,7 @@ use std::fmt::Debug;
 
 use crate::error::Result;
 use minicbor::{Decode, Encode};
-use zarb_crypto::address::Address;
+use crate::address::Address;
 
 #[derive(Debug, Clone, Decode, Encode, Eq, PartialEq)]
 #[cbor(index_only)]

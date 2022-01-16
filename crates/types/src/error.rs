@@ -13,8 +13,6 @@ pub enum Error {
     InvalidPayload(i8),
     #[error("Invalid signature or public key")]
     InvalidSignatory,
-    #[error("Crypto error")]
-    CryptoError(#[from] zarb_crypto::error::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

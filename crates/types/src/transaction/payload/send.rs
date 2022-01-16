@@ -1,7 +1,7 @@
 use super::{Payload, Type};
 use crate::error::Result;
 use minicbor::{Decode, Encode};
-use zarb_crypto::address::Address;
+use crate::address::Address;
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 #[cbor(map)]
