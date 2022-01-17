@@ -1,7 +1,7 @@
 use libp2p::Multiaddr;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub network_name: String,
     pub listening_multiaddr: Multiaddr,

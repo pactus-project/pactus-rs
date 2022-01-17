@@ -1,0 +1,18 @@
+[package]
+name = "zarbd"
+version = "0.1.0"
+edition = "2021"
+authors = ["Zarb <admin@zarb.network>"]
+
+
+[dependencies]
+zarb = {path = "../../zarb"}
+structopt = "0.3"
+pretty_env_logger = "0.4"
+ctrlc = "3.2"
+anyhow = "1.0"
+dirs = "4.0"
+serde = "1.0"
+serde_json = "1.0"
+toml = "0.5"
+async-std = "1.10"
