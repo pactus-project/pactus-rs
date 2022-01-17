@@ -1,7 +1,7 @@
 mod behaviour;
 pub mod config;
 pub mod network;
-mod swarm_api;
+mod swarm;
 mod transport;
 
 pub use self::config::*;
