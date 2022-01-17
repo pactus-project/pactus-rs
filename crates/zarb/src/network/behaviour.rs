@@ -48,10 +48,10 @@ pub struct Behaviour {
 pub enum BehaviourEventOut {
     PeerConnected(PeerId),
     PeerDisconnected(PeerId),
-    GossipMessage {
+    MessageReceived {
         source: PeerId,
         topic: TopicHash,
-        message: Vec<u8>,
+        data: Vec<u8>,
     },
 }
 
@@ -211,7 +211,9 @@ impl NetworkBehaviourEventProcess<MdnsEvent> for Behaviour {
                 for (peer, addr) in list {
                     trace!("mdns: Discovered peer {}", peer.to_base58());
                     self.add_peer(peer.clone());
-                    self.kademlia.as_mut().unwrap().add_address(&peer, addr);
+                    if self.kademlia.is_enabled() {
+                        self.kademlia.as_mut().unwrap().add_address(&peer, addr);
+                    }
                 }
             }
             MdnsEvent::Expired(list) => {
@@ -248,10 +250,10 @@ impl NetworkBehaviourEventProcess<GossipsubEvent> for Behaviour {
             message_id: _,
         } = message
         {
-            self.events.push(BehaviourEventOut::GossipMessage {
+            self.events.push(BehaviourEventOut::MessageReceived {
                 source: propagation_source,
                 topic: message.topic,
-                message: message.data,
+                data: message.data,
             })
         }
     }

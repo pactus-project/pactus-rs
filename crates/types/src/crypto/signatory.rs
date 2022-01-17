@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
-use super::public_key::PublicKey;
-use super::signature::Signature;
+use super::PublicKey;
+use super::Signature;
 
 pub trait Signatory: Debug {
     fn verify(&self, msg: &[u8]) -> bool;

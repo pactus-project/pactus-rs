@@ -9,8 +9,6 @@ pub enum Error {
     EncodeError(String),
     #[error("Invalid data length")]
     InvalidLength { expected: usize, found: usize },
-    #[error("Invalid payload type")]
-    InvalidPayload(i8),
     #[error("Invalid signature or public key")]
     InvalidSignatory,
 }

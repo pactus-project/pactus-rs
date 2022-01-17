@@ -1,40 +1,55 @@
 use super::behaviour;
 use super::config::Config;
-use super::event::Event;
-use super::message::Message;
 use super::transport;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use async_std::channel::{Receiver, Sender};
 use async_std::stream;
-use futures_util::stream::StreamExt;
 use behaviour::{Behaviour, BehaviourEventOut};
 use futures::select;
-use libp2p::core::network::NetworkEvent;
+use futures_util::stream::StreamExt;
+use libp2p::gossipsub::IdentTopic;
 pub use libp2p::gossipsub::{Topic, TopicHash};
-use libp2p::identity;
-use libp2p::Swarm;
 use libp2p::swarm::SwarmEvent;
+use libp2p::Swarm;
+use libp2p::{identity, PeerId};
 use log::{error, info, trace, warn};
+use std::fmt::Debug;
 use std::time::Duration;
+
+#[derive(Debug)]
+pub enum NetworkEvent {
+    PeerConnected(PeerId),
+    PeerDisconnected(PeerId),
+    MessageReceived {
+        source: PeerId,
+        topic: TopicHash,
+        data: Vec<u8>,
+    },
+}
+
+#[derive(Debug)]
+pub struct PubsubMessage {
+    topic_name: String,
+    data: Vec<u8>,
+}
 
 pub struct Network {
     config: Config,
     swarm: Swarm<Behaviour>,
-    message_receiver: Receiver<Message>,
-    message_sender: Sender<Message>,
-    event_receiver: Receiver<Event>,
-    event_sender: Sender<Event>,
+    message_receiver: Receiver<PubsubMessage>,
+    message_sender: Sender<PubsubMessage>,
+    event_receiver: Receiver<NetworkEvent>,
+    event_sender: Sender<NetworkEvent>,
 }
 
-async fn emit_event(sender: &Sender<Event>, event: Event) {
+async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
     if sender.send(event).await.is_err() {
         error!("Failed to emit event: Network channel receiver has been dropped");
     }
 }
 
-
 impl Network {
-    pub fn new(config: Config) -> Result<Self, Error> {
+    pub fn new(config: Config) -> Result<Self> {
         let local_key = identity::Keypair::generate_ed25519();
         let local_public = local_key.public();
         let local_peer_id = local_public.clone().to_peer_id();
@@ -45,19 +60,19 @@ impl Network {
 
         let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
 
-        Swarm::listen_on(&mut swarm, config.listening_multiaddr.clone()).unwrap();
+        Swarm::listen_on(&mut swarm, config.listening_addr.clone()).unwrap();
 
         for to_dial in &config.bootstrap_peers {
-            match libp2p::Swarm::dial(&mut swarm, to_dial.clone()) {
-                Ok(_) => info!("Dialed {:?}", to_dial),
-                Err(e) => error!("Dial {:?} failed: {:?}", to_dial, e),
-            }
+            libp2p::Swarm::dial(&mut swarm, to_dial.clone()).map_err(|err| {
+                Error::NetworkError(format!("Dial {:?} failed: {:?}", to_dial, err))
+            })?;
         }
 
         // Bootstrap with Kademlia
         if let Err(e) = swarm.behaviour_mut().bootstrap() {
             warn!("Failed to bootstrap with Kademlia: {}", e);
         }
+
         let (message_sender, message_receiver) = async_std::channel::unbounded();
         let (event_sender, event_receiver) = async_std::channel::unbounded();
 
@@ -77,18 +92,19 @@ impl Network {
         self.config.network_name.clone()
     }
 
-    pub fn sender(&self) -> Sender<Message> {
+    pub fn sender(&self) -> Sender<PubsubMessage> {
         self.message_sender.clone()
     }
 
-    pub fn register_topic(&mut self, topic_name: String) -> Receiver<Message> {
+    pub fn register_topic(&mut self, topic_name: String) -> Result<bool> {
         let topic = Topic::new(topic_name.clone());
-        self.swarm.behaviour_mut().subscribe(&topic);
-        let (notifier_sender, notifier_receiver) = async_std::channel::unbounded();
-        notifier_receiver
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&topic)
+            .map_err(|err| Error::NetworkError(format!("{:?}", err)))
     }
 
-    pub fn event_receiver(&self) -> Receiver<Event> {
+    pub fn event_receiver(&self) -> Receiver<NetworkEvent> {
         self.event_receiver.clone()
     }
 
@@ -103,19 +119,21 @@ impl Network {
                     Some(event) => match event {
                         SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) =>{
                             info!("Peer dialed {:?}", peer_id);
-                            emit_event(&self.event_sender, Event::PeerConnected(peer_id)).await;
+                            emit_event(&self.event_sender, NetworkEvent::PeerConnected(peer_id)).await;
                         }
                         SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) =>{
                             info!("Peer disconnected {:?}", peer_id);
-                            emit_event(&self.event_sender, Event::PeerDisconnected(peer_id)).await;
+                            emit_event(&self.event_sender, NetworkEvent::PeerDisconnected(peer_id)).await;
                         }
-                        SwarmEvent::Behaviour(BehaviourEventOut::GossipMessage {
+                        SwarmEvent::Behaviour(BehaviourEventOut::MessageReceived {
                             source,
                             topic,
-                            message,
+                            data,
                         }) => {
-                            trace!("Got a Gossip message from {:?}: {:?}", source, message);
-
+                            trace!("Got a Gossip message from {:?}: {:?}", source, data);
+                            emit_event(&self.event_sender, NetworkEvent::MessageReceived {
+                                source, topic, data
+                            }).await;
                         }
                         _ => {
                             continue;
@@ -124,15 +142,12 @@ impl Network {
                     None => { break; }
                 },
                 message = network_stream.next() => match message {
-                    Some(mut entry) => {
-                        // if let Some(topic_name) = entry.topic_name.clone() {
-                        //     let topic = Topic::new(topic_name);
-                        //     entry.from = Some(self.node_id.clone());
-                        //     if let Err(e) = swarm_stream.get_mut().publish(&topic, entry) {
-                        //         warn!("Failed to send gossipsub message: {:?}", e);
-                        //     }
-                        // }
-                    }
+                    Some(msg) => {
+                        let topic = Topic::new(msg.topic_name);
+                        if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(topic, msg.data) {
+                            warn!("Failed to send gossipsub message: {:?}", e);
+                        }
+                    },
                     None => { break; }
                 },
                 interval_event = interval.next() => if interval_event.is_some() {

@@ -7,12 +7,10 @@ pub enum Error {
     DecodeError(String),
     #[error("CBOR encoding error")]
     EncodeError(String),
-    #[error("io Error")]
-    IOError(#[from] std::io::Error),
-    #[error("LibP2P multiaddr error")]
-    LibP2PMultiaddr(#[from] libp2p::multiaddr::Error),
-    #[error("LibP2P transport error")]
-    LibP2PTransportError(#[from] libp2p::TransportError<std::io::Error>),
+    #[error("Network Error")]
+    NetworkError(String),
+    #[error("invalid message")]
+    InvalidMessage(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

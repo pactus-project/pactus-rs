@@ -1,5 +1,5 @@
-use super::public_key::BLSPublicKey;
-use super::signature::BLSSignature;
+use super::BLSPublicKey;
+use super::BLSSignature;
 use crate::error::{Error, Result};
 use crate::crypto::secret_key::SecretKey;
 use bls12_381_plus::{G2Projective, Scalar};

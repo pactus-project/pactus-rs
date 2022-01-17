@@ -1,6 +1,6 @@
 use super::signature::BLSSignature;
+use crate::crypto::PublicKey;
 use crate::error::{Error, Result};
-use crate::crypto::public_key::PublicKey;
 use bls12_381_plus::{multi_miller_loop, G2Affine, G2Prepared, G2Projective};
 use group::{Curve, Group};
 use std::ops::Neg;
@@ -13,6 +13,10 @@ pub struct BLSPublicKey(pub(super) G2Projective);
 impl PublicKey for BLSPublicKey {
     fn to_bytes(&self) -> Vec<u8> {
         BLSPublicKey::to_bytes(self).to_vec()
+    }
+
+    fn sanity_check(&self) -> Result<()> {
+        Ok(())
     }
 }
 

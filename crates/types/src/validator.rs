@@ -1,5 +1,5 @@
 use minicbor::{Decode, Encode};
-use crate::crypto::bls::public_key::BLSPublicKey;
+use crate::crypto::bls::BLSPublicKey;
 
 #[derive(Encode, Decode)]
 #[cbor(map)]
