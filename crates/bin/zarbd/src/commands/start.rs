@@ -1,25 +1,32 @@
 use crate::file::{load_config_file, load_genesis_file};
 use anyhow::Result;
 use async_std::task;
+use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::thread;
+use std::{env, thread};
 use structopt::StructOpt;
 use zarb::config::Config;
-use zarb::network::network::Network;
+use zarb::network::create_network_service;
+use zarb::sync::create_sync_service;
+use zarb::Service;
+
+lazy_static! {
+    static ref DEFAULT_WORKING_DIR: String = format!("{}/zarb", env::var("HOME").as_deref().unwrap_or("."));
+}
 
 /// The `generate-node-key` command
 #[derive(Debug, StructOpt)]
 #[structopt(name = "start", about = "run the node")]
 pub struct StartCmd {
-    #[structopt(short = "o", default_value = "")]
-    output_dir: String,
+    #[structopt(short = "w", default_value = &DEFAULT_WORKING_DIR)]
+    working_dir: String,
 }
 
 impl Default for StartCmd {
     fn default() -> Self {
         Self {
-            output_dir: format! {"{:?}/zarb", dirs::home_dir().unwrap().to_str()},
+            working_dir: format! {"{:?}/zarb", dirs::home_dir().unwrap().to_str()},
         }
     }
 }
@@ -27,7 +34,7 @@ impl Default for StartCmd {
 impl StartCmd {
     /// Run the command
     pub fn execute(&self) -> Result<()> {
-        let dir = self.output_dir.clone();
+        let dir = self.working_dir.clone();
         let running = Arc::new(AtomicBool::new(true));
         let r = running.clone();
         ctrlc::set_handler(move || {
@@ -37,16 +44,22 @@ impl StartCmd {
 
         pretty_env_logger::init();
 
+
         //load the configuration file
-        let config: Config = crate::file::load_config_file(dir.clone() + "/config.toml").unwrap();
+        let config: Config = crate::file::load_config_file(dir.clone() + "/config.toml")?;
 
         //load the genesis file
         //let genesis: Genesis = file::load_genesis_file(dir.clone() + "/genesis.json").unwrap();
 
-        let network = Network::new(config.network).ok().unwrap();
+        let mut network = create_network_service(config.network)?;
+        let sync = create_sync_service(config.sync, &network).unwrap();
 
         let network_task = task::spawn(async {
-            network.run().await;
+            network.start().await;
+        });
+
+        let sync_task = task::spawn(async {
+            sync.start().await;
         });
 
         while running.load(Ordering::SeqCst) {
@@ -57,6 +70,7 @@ impl StartCmd {
 
         let _handle = task::spawn(async {
             network_task.cancel().await;
+            sync_task.cancel().await;
         });
 
         // futures::executor::block_on(handle);
@@ -64,5 +78,3 @@ impl StartCmd {
         Ok(())
     }
 }
-
-

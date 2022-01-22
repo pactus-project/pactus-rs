@@ -1,10 +1,11 @@
-use super::behaviour;
 use super::config::Config;
-use super::r#trait::{NetworkEvent, NetworkMessage};
 use super::transport;
+use super::{behaviour, NetworkService};
+use super::{NetworkEvent, NetworkMessage};
 use crate::error::{Error, Result};
 use async_std::channel::{Receiver, Sender};
 use async_std::stream;
+use async_trait::async_trait;
 use behaviour::{Behaviour, BehaviourEventOut};
 use futures::select;
 use futures_util::stream::StreamExt;
@@ -12,10 +13,10 @@ pub use libp2p::gossipsub::{Topic, TopicHash};
 use libp2p::identity;
 use libp2p::swarm::SwarmEvent;
 use libp2p::Swarm;
-use log::{error, info, trace, warn, debug};
+use log::{debug, error, info, trace, warn};
 use std::time::Duration;
 
-pub struct Network {
+pub(crate) struct ZarbNetwork {
     config: Config,
     swarm: Swarm<Behaviour>,
     message_receiver: Receiver<NetworkMessage>,
@@ -30,55 +31,8 @@ async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
     }
 }
 
-impl Network {
-    pub fn new(config: Config) -> Result<Self> {
-        let local_key = identity::Keypair::generate_ed25519();
-        let local_public = local_key.public();
-        let local_peer_id = local_public.clone().to_peer_id();
-        info!("Local node identity is: {}", local_peer_id.to_base58());
-
-        let transport = transport::build_transport(&local_key);
-        let behaviour = Behaviour::new(&local_key, &config);
-
-        let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
-
-        Swarm::listen_on(&mut swarm, config.listening_addr.clone()).unwrap();
-
-        for to_dial in &config.bootstrap_peers {
-            libp2p::Swarm::dial(&mut swarm, to_dial.clone()).map_err(|err| {
-                Error::NetworkError(format!("Dial {:?} failed: {:?}", to_dial, err))
-            })?;
-        }
-
-        // Bootstrap with Kademlia
-        if let Err(e) = swarm.behaviour_mut().bootstrap() {
-            warn!("Failed to bootstrap with Kademlia: {}", e);
-        }
-
-        let (message_sender, message_receiver) = async_std::channel::unbounded();
-        let (event_sender, event_receiver) = async_std::channel::unbounded();
-
-        Ok(Network {
-            config,
-            swarm,
-            message_sender,
-            message_receiver,
-            event_sender,
-            event_receiver,
-        })
-    }
-
-    pub fn close(&self) {}
-
-    pub fn name(&self) -> String {
-        self.config.network_name.clone()
-    }
-
-    pub fn message_sender(&self) -> Sender<NetworkMessage> {
-        self.message_sender.clone()
-    }
-
-    pub fn register_topic(&mut self, topic_name: String) -> Result<bool> {
+impl NetworkService for ZarbNetwork {
+    fn register_topic(&mut self, topic_name: String) -> Result<bool> {
         let topic = Topic::new(topic_name.clone());
         self.swarm
             .behaviour_mut()
@@ -86,11 +40,18 @@ impl Network {
             .map_err(|err| Error::NetworkError(format!("{:?}", err)))
     }
 
-    pub fn event_receiver(&self) -> Receiver<NetworkEvent> {
-        self.event_receiver.clone()
+    fn message_sender(&self) -> Sender<NetworkMessage> {
+        self.message_sender.clone()
     }
 
-    pub async fn run(self) {
+    fn event_receiver(&self) -> Receiver<NetworkEvent> {
+        self.event_receiver.clone()
+    }
+}
+
+#[async_trait]
+impl crate::Service for ZarbNetwork {
+    async fn start(self) {
         let mut swarm_stream = self.swarm.fuse();
         let mut network_stream = self.message_receiver.fuse();
         let mut interval = stream::interval(Duration::from_secs(10)).fuse();
@@ -140,6 +101,51 @@ impl Network {
     }
 }
 
+impl ZarbNetwork {
+    pub fn new(config: Config) -> Result<Self> {
+        let local_key = identity::Keypair::generate_ed25519();
+        let local_public = local_key.public();
+        let local_peer_id = local_public.clone().to_peer_id();
+        info!("Local node identity is: {}", local_peer_id.to_base58());
+
+        let transport = transport::build_transport(&local_key);
+        let behaviour = Behaviour::new(&local_key, &config);
+
+        let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
+
+        Swarm::listen_on(&mut swarm, config.listening_addr.clone()).unwrap();
+
+        for to_dial in &config.bootstrap_peers {
+            libp2p::Swarm::dial(&mut swarm, to_dial.clone()).map_err(|err| {
+                Error::NetworkError(format!("Dial {:?} failed: {:?}", to_dial, err))
+            })?;
+        }
+
+        // Bootstrap with Kademlia
+        if let Err(e) = swarm.behaviour_mut().bootstrap() {
+            warn!("Failed to bootstrap with Kademlia: {}", e);
+        }
+
+        let (message_sender, message_receiver) = async_std::channel::unbounded();
+        let (event_sender, event_receiver) = async_std::channel::unbounded();
+
+        Ok(Self {
+            config,
+            swarm,
+            message_sender,
+            message_receiver,
+            event_sender,
+            event_receiver,
+        })
+    }
+
+    pub fn close(&self) {}
+
+    pub fn name(&self) -> String {
+        self.config.network_name.clone()
+    }
+}
+
 #[cfg(test)]
-#[path = "./network_test.rs"]
-mod network_test;
+#[path = "./service_test.rs"]
+mod service_test;

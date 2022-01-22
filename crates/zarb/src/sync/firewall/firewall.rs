@@ -1,7 +1,5 @@
-use zarb_types::error::Result;
-
+use crate::error::Result;
 use crate::sync::message;
-
 use super::{config::Config, config};
 
 pub(crate) struct Firewall {

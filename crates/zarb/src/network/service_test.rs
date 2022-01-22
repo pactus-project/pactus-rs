@@ -1,5 +1,10 @@
 mod tests {
-    use super::super::*;
+    use crate::network::{
+        config::Config,
+        service::ZarbNetwork,
+        {NetworkEvent, NetworkMessage, NetworkService},
+    };
+    use crate::Service;
     use async_std::task;
     use simple_logger::SimpleLogger;
     use std::{thread, time::Duration};
@@ -7,7 +12,7 @@ mod tests {
     #[test]
     fn network_initialize() {
         let conf = Config::default();
-        let net = Network::new(conf);
+        let net = ZarbNetwork::new(conf);
         assert!(net.is_ok(), "Network initialization failed");
     }
 
@@ -16,7 +21,7 @@ mod tests {
         SimpleLogger::new().with_utc_timestamps().init().unwrap();
 
         let conf1 = Config::default();
-        let net1 = Network::new(conf1).unwrap();
+        let net1 = ZarbNetwork::new(conf1).unwrap();
 
         let mut conf2 = Config::default();
         conf2.listening_addr = format!(
@@ -25,18 +30,18 @@ mod tests {
         )
         .parse()
         .unwrap();
-        let mut net2 = Network::new(conf2).unwrap();
+        let mut net2 = ZarbNetwork::new(conf2).unwrap();
 
         let net1_sender = net1.message_sender();
         assert!(net2.register_topic("test".to_owned()).unwrap());
         let net2_receiver = net2.event_receiver();
 
         task::spawn(async {
-            net1.run().await;
+            net1.start().await;
         });
 
         task::spawn(async {
-            net2.run().await;
+            net2.start().await;
         });
 
         let delay = Duration::from_millis(2000);
