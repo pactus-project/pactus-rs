@@ -3,6 +3,7 @@ pub mod secret_key;
 pub mod signatory;
 pub mod signature;
 
+
 macro_rules! impl_cbor {
     ($ty:ty) => {
         impl minicbor::Encode for $ty {

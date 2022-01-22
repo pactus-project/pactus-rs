@@ -1,5 +1,5 @@
 use super::config::Config;
-use super::swarm_api::{SwarmApi, SwarmEvent};
+use super::swarm::{Swarm, SwarmEvent};
 use libp2p::{
     core::{identity::Keypair, PeerId},
     gossipsub::{
@@ -32,7 +32,7 @@ use std::{task::Context, task::Poll};
     event_process = true
 )]
 pub struct Behaviour {
-    swarm_api: SwarmApi,
+    swarm_api: Swarm,
     gossipsub: Gossipsub,
     mdns: Toggle<Mdns>,
     ping: Ping,
@@ -48,10 +48,10 @@ pub struct Behaviour {
 pub enum BehaviourEventOut {
     PeerConnected(PeerId),
     PeerDisconnected(PeerId),
-    GossipMessage {
+    MessageReceived {
         source: PeerId,
         topic: TopicHash,
-        message: Vec<u8>,
+        data: Vec<u8>,
     },
 }
 
@@ -134,7 +134,7 @@ impl Behaviour {
         )
         .unwrap();
 
-        let swarm_api = SwarmApi::new();
+        let swarm_api = Swarm::new();
         Behaviour {
             swarm_api: swarm_api,
             gossipsub,
@@ -211,7 +211,9 @@ impl NetworkBehaviourEventProcess<MdnsEvent> for Behaviour {
                 for (peer, addr) in list {
                     trace!("mdns: Discovered peer {}", peer.to_base58());
                     self.add_peer(peer.clone());
-                    self.kademlia.as_mut().unwrap().add_address(&peer, addr);
+                    if self.kademlia.is_enabled() {
+                        self.kademlia.as_mut().unwrap().add_address(&peer, addr);
+                    }
                 }
             }
             MdnsEvent::Expired(list) => {
@@ -248,10 +250,10 @@ impl NetworkBehaviourEventProcess<GossipsubEvent> for Behaviour {
             message_id: _,
         } = message
         {
-            self.events.push(BehaviourEventOut::GossipMessage {
+            self.events.push(BehaviourEventOut::MessageReceived {
                 source: propagation_source,
                 topic: message.topic,
-                message: message.data,
+                data: message.data,
             })
         }
     }
@@ -283,10 +285,10 @@ impl NetworkBehaviourEventProcess<PingEvent> for Behaviour {
     }
 }
 
-impl NetworkBehaviourEventProcess<<SwarmApi as libp2p::swarm::NetworkBehaviour>::OutEvent>
+impl NetworkBehaviourEventProcess<<Swarm as libp2p::swarm::NetworkBehaviour>::OutEvent>
     for Behaviour
 {
-    fn inject_event(&mut self, event: <SwarmApi as libp2p::swarm::NetworkBehaviour>::OutEvent) {
+    fn inject_event(&mut self, event: <Swarm as libp2p::swarm::NetworkBehaviour>::OutEvent) {
         match event {
             SwarmEvent::PeerConnected(peer_id) => {
                 self.events.push(BehaviourEventOut::PeerConnected(peer_id))

@@ -4,7 +4,6 @@ use libp2p::{
     core::{connection::ConnectionId, Multiaddr, PeerId},
     swarm::{
         protocols_handler::{DummyProtocolsHandler, IntoProtocolsHandler, ProtocolsHandler},
-        toggle::{Toggle, ToggleIntoProtoHandler},
     },
 };
 use log::trace;
@@ -17,19 +16,19 @@ pub enum SwarmEvent {
 }
 
 #[derive(Debug, Default)]
-pub struct SwarmApi {
+pub struct Swarm {
     events: VecDeque<SwarmEvent>,
 }
 
-impl SwarmApi {
+impl Swarm {
     pub fn new() -> Self {
-        SwarmApi {
+        Swarm {
             events: VecDeque::new(),
         }
     }
 }
 
-impl NetworkBehaviour for SwarmApi {
+impl NetworkBehaviour for Swarm {
     type ProtocolsHandler = DummyProtocolsHandler;
     type OutEvent = SwarmEvent;
 

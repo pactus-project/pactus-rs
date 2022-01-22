@@ -3404,6 +3404,7 @@ dependencies = [
  "async-std",
  "ctrlc",
  "dirs",
+ "lazy_static",
  "pretty_env_logger",
  "serde",
  "serde_json",

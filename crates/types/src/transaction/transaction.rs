@@ -1,11 +1,12 @@
 use super::payload;
-use crate::error::{Error, Result};
-use minicbor::bytes::ByteVec;
-use minicbor::{Decode, Encode};
-use crate::crypto::bls;
+use crate::crypto::bls::public_key::BLSPublicKey;
+use crate::crypto::bls::signature::BLSSignature;
 use crate::crypto::bls::signatory::BLSSignatory;
 use crate::crypto::signatory::Signatory;
+use crate::error::{Error, Result};
 use crate::stamp::Stamp;
+use minicbor::bytes::ByteVec;
+use minicbor::{Decode, Encode};
 
 #[derive(Debug)]
 pub struct Transaction {
@@ -52,10 +53,10 @@ impl Transaction {
 
         let signatory: Option<Box<dyn Signatory>> = match raw.signature_data {
             Some(data) => {
-                let sig = bls::signature::BLSSignature::from_bytes(data.as_ref())?;
+                let sig = BLSSignature::from_bytes(data.as_ref())?;
                 match raw.public_key_data {
                     Some(data) => {
-                        let pub_key = bls::public_key::BLSPublicKey::from_bytes(data.as_ref())?;
+                        let pub_key = BLSPublicKey::from_bytes(data.as_ref())?;
 
                         Some(Box::new(BLSSignatory { pub_key, sig }))
                     }

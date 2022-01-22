@@ -6,7 +6,7 @@ use crate::error::Result;
 use minicbor::{Decode, Encode};
 use crate::address::Address;
 
-#[derive(Debug, Clone, Decode, Encode, Eq, PartialEq)]
+#[derive(Debug, Decode, Encode,)]
 #[cbor(index_only)]
 pub enum Type {
     #[n(1)]
