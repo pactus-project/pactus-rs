@@ -10,11 +10,13 @@ pub struct Config {
     pub kademlia: bool,
 }
 
-impl Config {
-    #[cfg(test)]
-    pub fn test() -> Self {
+impl Default for Config {
+    fn default() -> Self {
         Self {
+            #[cfg(test)]
             network_name: "zarb_testnet".to_string(),
+            #[cfg(not(test))]
+            network_name: "zarb".to_string(),
             listening_addr: "/ip4/0.0.0.0/tcp/1347".parse().unwrap(),
             bootstrap_peers: vec!["/ip4/127.0.0.1/tcp/1347".parse().unwrap()],
             mdns: true,
