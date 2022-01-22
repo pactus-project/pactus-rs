@@ -1,5 +1,5 @@
 use super::signature::BLSSignature;
-use crate::crypto::PublicKey;
+use crate::crypto::public_key::PublicKey;
 use crate::error::{Error, Result};
 use bls12_381_plus::{multi_miller_loop, G2Affine, G2Prepared, G2Projective};
 use group::{Curve, Group};

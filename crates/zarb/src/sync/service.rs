@@ -1,6 +1,6 @@
 use zarb_types::error::Result;
 use crate::network::{r#trait::Network};
-use super::{config::Config, firewall::Firewall};
+use super::{config::Config, firewall::firewall::Firewall};
 
 
 
@@ -20,5 +20,5 @@ impl Service {
         })
     }
 
-    
+
 }

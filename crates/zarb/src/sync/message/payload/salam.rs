@@ -1,8 +1,8 @@
 use super::Payload;
 use crate::error::{Error, Result};
 use minicbor::{Decode, Encode};
-use zarb_types::crypto::PublicKey;
-use zarb_types::{crypto::bls::BLSPublicKey, hash::Hash32};
+use zarb_types::crypto::public_key::PublicKey;
+use zarb_types::{crypto::bls::public_key::BLSPublicKey, hash::Hash32};
 
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]

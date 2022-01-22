@@ -2,7 +2,7 @@ use zarb_types::error::Result;
 
 use crate::sync::message;
 
-use super::{Config, config};
+use super::{config::Config, config};
 
 pub(crate) struct Firewall {
     config: Config,
@@ -13,7 +13,7 @@ impl Firewall {
         Ok(Firewall{config: config.clone()})
     }
 
-    pub fn open_message(&self, data: &[u8]) -> message::Message {
+    pub fn open_message(&self, data: &[u8]) -> message::message::Message {
         todo!()
     }
 }

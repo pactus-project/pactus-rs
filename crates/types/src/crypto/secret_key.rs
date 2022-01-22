@@ -1,6 +1,6 @@
 pub trait SecretKey {
-    type PublicKey: super::PublicKey;
-    type Signature: super::Signature;
+    type PublicKey: super::public_key::PublicKey;
+    type Signature: super::signature::Signature;
 
     fn public_key(&self) -> Self::PublicKey;
     fn sign(&self, msg: &[u8]) -> Self::Signature;
