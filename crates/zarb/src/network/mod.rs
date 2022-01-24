@@ -8,7 +8,10 @@ pub mod service;
 pub use crate::error::Result;
 use async_std::channel::{Receiver, Sender};
 use async_trait::async_trait;
-use libp2p::{gossipsub::TopicHash, PeerId};
+use libp2p::{
+    gossipsub::{IdentTopic, TopicHash},
+    PeerId,
+};
 use service::ZarbNetwork;
 
 #[derive(Debug)]
@@ -23,11 +26,9 @@ pub enum NetworkEvent {
 }
 
 #[derive(Debug)]
-pub struct NetworkMessage {
-    pub topic_name: String,
-    pub data: Vec<u8>,
+pub enum NetworkMessage {
+    PubsubMessage { topic: IdentTopic, data: Vec<u8> },
 }
-
 pub trait NetworkService: crate::Service {
     fn register_topic(&mut self, topic_name: String) -> Result<bool>;
     fn message_sender(&self) -> Sender<NetworkMessage>;

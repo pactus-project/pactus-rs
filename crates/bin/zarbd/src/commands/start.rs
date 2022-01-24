@@ -12,7 +12,8 @@ use zarb::sync::create_sync_service;
 use zarb::Service;
 
 lazy_static! {
-    static ref DEFAULT_WORKING_DIR: String = format!("{}/zarb", env::var("HOME").as_deref().unwrap_or("."));
+    static ref DEFAULT_WORKING_DIR: String =
+        format!("{}/zarb", env::var("HOME").as_deref().unwrap_or("."));
 }
 
 /// The `generate-node-key` command
@@ -44,7 +45,6 @@ impl StartCmd {
 
         pretty_env_logger::init();
 
-
         //load the configuration file
         let config: Config = crate::file::load_config_file(dir.clone() + "/config.toml")?;
 
@@ -52,7 +52,7 @@ impl StartCmd {
         //let genesis: Genesis = file::load_genesis_file(dir.clone() + "/genesis.json").unwrap();
 
         let mut network = create_network_service(config.network)?;
-        let sync = create_sync_service(config.sync, &network).unwrap();
+        let sync = create_sync_service(config.sync, &mut network).unwrap();
 
         let network_task = task::spawn(async {
             network.start().await;

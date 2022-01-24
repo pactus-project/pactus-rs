@@ -1,6 +1,6 @@
-use minicbor::{Decode, Encode};
 use crate::crypto::bls::signature::BLSSignature;
 use crate::hash::Hash32;
+use minicbor::{Decode, Encode};
 
 #[derive(Encode, Decode)]
 #[cbor(map)]

@@ -1,7 +1,7 @@
 use super::payload;
 use crate::crypto::bls::public_key::BLSPublicKey;
-use crate::crypto::bls::signature::BLSSignature;
 use crate::crypto::bls::signatory::BLSSignatory;
+use crate::crypto::bls::signature::BLSSignature;
 use crate::crypto::signatory::Signatory;
 use crate::error::{Error, Result};
 use crate::stamp::Stamp;
@@ -42,6 +42,23 @@ struct RawTransaction {
 }
 
 impl Transaction {
+    pub fn new(
+        stamp: Stamp,
+        sequence: i32,
+        fee: i64,
+        memo: String,
+        payload: Box<dyn payload::Payload>,
+        signatory: Option<Box<dyn Signatory>>,
+    ) -> Result<Self> {
+        Ok(Transaction {
+            stamp,
+            sequence,
+            fee,
+            memo,
+            payload,
+            signatory,
+        })
+    }
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
         let raw: RawTransaction = minicbor::decode(data)?;
         let payload = Box::new(match raw.payload_type {
@@ -65,14 +82,14 @@ impl Transaction {
             }
             None => None,
         };
-        Ok(Transaction {
-            stamp: raw.stamp,
-            sequence: raw.sequence,
-            fee: raw.fee,
-            memo: raw.memo,
+        Self::new(
+            raw.stamp,
+            raw.sequence,
+            raw.fee,
+            raw.memo,
             payload,
             signatory,
-        })
+        )
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {

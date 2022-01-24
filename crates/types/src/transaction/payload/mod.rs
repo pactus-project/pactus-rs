@@ -2,11 +2,11 @@ pub mod send;
 
 use std::fmt::Debug;
 
+use crate::address::Address;
 use crate::error::Result;
 use minicbor::{Decode, Encode};
-use crate::address::Address;
 
-#[derive(Debug, Decode, Encode,)]
+#[derive(Debug, Decode, Encode)]
 #[cbor(index_only)]
 pub enum Type {
     #[n(1)]

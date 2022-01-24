@@ -7,22 +7,16 @@ use zarb_types::{crypto::bls::public_key::BLSPublicKey, hash::Hash32};
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]
 
-pub struct SalamPayload {
+pub struct HeartbeatPayload {
     #[n(1)]
-    node_version: String,
-    #[n(2)]
-    moniker: String,
-    #[n(3)]
-    public_key: BLSPublicKey,
-    #[n(4)]
-    genesis_hash: Hash32,
-    #[n(5)]
     height: i32,
-    #[n(6)]
-    flags: u32,
+    #[n(2)]
+    round: i32,
+    #[n(3)]
+    prev_block_hash: Hash32,
 }
 
-impl Payload for SalamPayload {
+impl Payload for HeartbeatPayload {
     fn sanity_check(&self) -> super::Result<()> {
         if self.height < 0 {
             return Err(Error::InvalidMessage(format!(
@@ -30,17 +24,17 @@ impl Payload for SalamPayload {
                 self.height
             )));
         }
-        if let Err(err) = self.public_key.sanity_check() {
+        if self.round < 0 {
             return Err(Error::InvalidMessage(format!(
-                "invalid public key: {}",
-                err
+                "invalid round: {}",
+                self.height
             )));
         }
         Ok(())
     }
 
     fn payload_type(&self) -> super::Type {
-        super::Type::Salam
+        super::Type::Heartbeat
     }
 
     fn to_bytes(&self) -> Result<Vec<u8>> {

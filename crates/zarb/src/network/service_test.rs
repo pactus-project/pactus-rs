@@ -6,6 +6,7 @@ mod tests {
     };
     use crate::Service;
     use async_std::task;
+    use libp2p::gossipsub::Topic;
     use simple_logger::SimpleLogger;
     use std::{thread, time::Duration};
 
@@ -48,8 +49,8 @@ mod tests {
         thread::sleep(delay);
 
         let data1 = [1, 2, 3, 4].to_vec();
-        let msg1 = NetworkMessage {
-            topic_name: "test".to_string(),
+        let msg1 = NetworkMessage::PubsubMessage {
+            topic: Topic::new("test"),
             data: data1.clone(),
         };
 

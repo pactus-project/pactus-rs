@@ -1,7 +1,7 @@
+use anyhow::Result;
 use dirs::home_dir;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use anyhow::Result;
 
 pub mod init;
 pub mod start;

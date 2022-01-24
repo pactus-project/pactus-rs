@@ -1,7 +1,7 @@
 use super::public_key::BLSPublicKey;
 use super::signature::BLSSignature;
-use crate::error::{Error, Result};
 use crate::crypto::secret_key::SecretKey;
+use crate::error::{Error, Result};
 use bls12_381_plus::{G2Projective, Scalar};
 
 const SECRET_KEY_SIZE: usize = 32;
