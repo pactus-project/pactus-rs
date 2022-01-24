@@ -2,9 +2,7 @@ use core::task::{Context, Poll};
 use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
 use libp2p::{
     core::{connection::ConnectionId, Multiaddr, PeerId},
-    swarm::{
-        protocols_handler::{DummyProtocolsHandler, IntoProtocolsHandler, ProtocolsHandler},
-    },
+    swarm::protocols_handler::{DummyProtocolsHandler, IntoProtocolsHandler, ProtocolsHandler},
 };
 use log::trace;
 use std::collections::VecDeque;

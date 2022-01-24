@@ -1,7 +1,7 @@
 pub mod account;
+pub mod address;
 pub mod block;
 pub mod certificate;
-pub mod address;
 pub mod crypto;
 pub mod error;
 pub mod hash;
@@ -22,7 +22,6 @@ macro_rules! impl_from_to_bytes {
         }
     };
 }
-
 
 macro_rules! impl_cbor {
     ($ty:ty) => {

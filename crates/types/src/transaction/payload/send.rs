@@ -1,7 +1,7 @@
 use super::{Payload, Type};
+use crate::address::Address;
 use crate::error::Result;
 use minicbor::{Decode, Encode};
-use crate::address::Address;
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 #[cbor(map)]

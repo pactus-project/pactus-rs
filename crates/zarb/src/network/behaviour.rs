@@ -89,7 +89,7 @@ impl Behaviour {
         // Kademlia config
         let store = MemoryStore::new(local_peer_id.to_owned());
         let mut kad_config = KademliaConfig::default();
-        let network = format!("/zarb/kad/{}/kad/1.0.0", config.network_name);
+        let network = format!("/{}/kad/v1", config.network_name);
         kad_config.set_protocol_name(network.as_bytes().to_vec());
         let kademlia_opt = if config.kademlia {
             let mut kademlia = Kademlia::with_config(local_peer_id.to_owned(), store, kad_config);
@@ -120,7 +120,7 @@ impl Behaviour {
             None
         };
 
-        let identify = Identify::new(IdentifyConfig::new("zarb/0.1.0".into(), local_key.public()));
+        let identify = Identify::new(IdentifyConfig::new("zarb/v1".into(), local_key.public()));
 
         let mut gs_config_builder = GossipsubConfigBuilder::default();
         // gs_config_builder.message_id_fn(|msg: &GossipsubMessage| {
@@ -190,12 +190,12 @@ impl NetworkBehaviourEventProcess<IdentifyEvent> for Behaviour {
     fn inject_event(&mut self, event: IdentifyEvent) {
         match event {
             IdentifyEvent::Received { peer_id, info } => {
-                trace!("Identified Peer {}", peer_id);
-                trace!("protocol_version {}", info.protocol_version);
-                trace!("agent_version {}", info.agent_version);
-                trace!("listening_ addresses {:?}", info.listen_addrs);
-                trace!("observed_address {}", info.observed_addr);
-                trace!("protocols {:?}", info.protocols);
+                debug!("Identified Peer {}", peer_id);
+                debug!("protocol_version {}", info.protocol_version);
+                debug!("agent_version {}", info.agent_version);
+                debug!("listening_ addresses {:?}", info.listen_addrs);
+                debug!("observed_address {}", info.observed_addr);
+                debug!("protocols {:?}", info.protocols);
             }
             IdentifyEvent::Sent { .. } => (),
             IdentifyEvent::Pushed { .. } => (),

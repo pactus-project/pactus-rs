@@ -1,8 +1,8 @@
 use super::public_key::BLSPublicKey;
 use super::signature::BLSSignature;
 use crate::crypto::public_key::PublicKey;
-use crate::crypto::signature::Signature;
 use crate::crypto::signatory::Signatory;
+use crate::crypto::signature::Signature;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BLSSignatory {

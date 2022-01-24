@@ -33,7 +33,10 @@ async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
 
 impl NetworkService for ZarbNetwork {
     fn register_topic(&mut self, topic_name: String) -> Result<bool> {
-        let topic = Topic::new(topic_name.clone());
+        let topic = Topic::new(format!(
+            "/{}/pubsub/v1/{}",
+            self.config.network_name, topic_name
+        ));
         self.swarm
             .behaviour_mut()
             .subscribe(&topic)
@@ -60,11 +63,11 @@ impl crate::Service for ZarbNetwork {
             select! {
                 swarm_event = swarm_stream.next() => match swarm_event {
                     Some(event) => match event {
-                        SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) =>{
+                        SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) => {
                             info!("Peer dialed {:?}", peer_id);
                             emit_event(&self.event_sender, NetworkEvent::PeerConnected(peer_id)).await;
                         }
-                        SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) =>{
+                        SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) => {
                             info!("Peer disconnected {:?}", peer_id);
                             emit_event(&self.event_sender, NetworkEvent::PeerDisconnected(peer_id)).await;
                         }
@@ -73,7 +76,7 @@ impl crate::Service for ZarbNetwork {
                             topic,
                             data,
                         }) => {
-                            trace!("Got a Gossip message from {:?}: {:?}", source, data);
+                            debug!("Got a Gossip message from {:?}: {:?}", source, data);
                             emit_event(&self.event_sender, NetworkEvent::MessageReceived {
                                 source, topic, data
                             }).await;
@@ -85,10 +88,11 @@ impl crate::Service for ZarbNetwork {
                     None => { break; }
                 },
                 message = network_stream.next() => match message {
-                    Some(msg) => {
-                        let topic = Topic::new(msg.topic_name);
-                        if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(topic, msg.data) {
-                            warn!("Failed to publish message: {:?}", e);
+                    Some(msg) => match msg {
+                        NetworkMessage::PubsubMessage{topic, data} =>{
+                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(topic, data) {
+                                warn!("Failed to publish message: {:?}", e);
+                            }
                         }
                     },
                     None => { break; }

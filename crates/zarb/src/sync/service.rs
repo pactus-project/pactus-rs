@@ -38,7 +38,12 @@ impl crate::Service for ZarbSync {
                         }
                         NetworkEvent::MessageReceived{source, topic, data} =>{
                             info!("Message received {:?}", topic);
-                            let msg = self.firewall.open_message(&data);
+                            match self.firewall.open_message(&data) {
+                                Ok(msg) => {}
+                                Err(err) => {
+                                    warn!("invalid message: {}", err);
+                                }
+                            };
                         }
                     }
                     None => { break; }
@@ -51,7 +56,8 @@ impl crate::Service for ZarbSync {
 }
 
 impl ZarbSync {
-    pub fn new(config: Config, network: &dyn NetworkService) -> Result<Self> {
+    pub fn new(config: Config, network: &mut dyn NetworkService) -> Result<Self> {
+        network.register_topic("general".to_string())?;
         Ok(Self {
             config: config.clone(),
             firewall: Firewall::new(&config.firewall)?,

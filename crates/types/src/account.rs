@@ -1,5 +1,5 @@
-use minicbor::{Decode, Encode};
 use crate::address::Address;
+use minicbor::{Decode, Encode};
 
 #[derive(Encode, Decode)]
 #[cbor(map)]
