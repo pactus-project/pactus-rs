@@ -20,17 +20,18 @@ pub enum NetworkEvent {
     PeerDisconnected(PeerId),
     MessageReceived {
         source: PeerId,
-        topic: TopicHash,
         data: Vec<u8>,
-    },
+    }
 }
 
 #[derive(Debug)]
 pub enum NetworkMessage {
-    PubsubMessage { topic: IdentTopic, data: Vec<u8> },
+    GeneralMessage { data: Vec<u8> },
+    ConsensusMessage { data: Vec<u8> },
+    StreamMessage { target: PeerId, data: Vec<u8> },
 }
 pub trait NetworkService: crate::Service {
-    fn register_topic(&mut self, topic_name: String) -> Result<bool>;
+    fn self_id(&self) -> PeerId;
     fn message_sender(&self) -> Sender<NetworkMessage>;
     fn event_receiver(&self) -> Receiver<NetworkEvent>;
 }

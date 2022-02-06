@@ -36,8 +36,7 @@ impl crate::Service for ZarbSync {
                         NetworkEvent::PeerDisconnected(peer_id) =>{
                             info!("peer disconnected {:?}", peer_id);
                         }
-                        NetworkEvent::MessageReceived{source, topic, data} =>{
-                            info!("Message received {:?}", topic);
+                        NetworkEvent::MessageReceived{source, data} =>{
                             match self.firewall.open_message(&data) {
                                 Ok(msg) => {}
                                 Err(err) => {
@@ -57,7 +56,6 @@ impl crate::Service for ZarbSync {
 
 impl ZarbSync {
     pub fn new(config: Config, network: &mut dyn NetworkService) -> Result<Self> {
-        network.register_topic("general".to_string())?;
         Ok(Self {
             config: config.clone(),
             firewall: Firewall::new(&config.firewall)?,

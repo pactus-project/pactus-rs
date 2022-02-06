@@ -1,5 +1,6 @@
 use super::config::Config;
 use super::swarm::{Swarm, SwarmEvent};
+use libp2p::request_response::{RequestResponseEvent, RequestResponseMessage};
 use libp2p::{
     core::{identity::Keypair, PeerId},
     gossipsub::{
@@ -50,7 +51,6 @@ pub enum BehaviourEventOut {
     PeerDisconnected(PeerId),
     MessageReceived {
         source: PeerId,
-        topic: TopicHash,
         data: Vec<u8>,
     },
 }
@@ -252,7 +252,6 @@ impl NetworkBehaviourEventProcess<GossipsubEvent> for Behaviour {
         {
             self.events.push(BehaviourEventOut::MessageReceived {
                 source: propagation_source,
-                topic: message.topic,
                 data: message.data,
             })
         }
@@ -296,6 +295,61 @@ impl NetworkBehaviourEventProcess<<Swarm as libp2p::swarm::NetworkBehaviour>::Ou
             SwarmEvent::PeerDisconnected(peer_id) => self
                 .events
                 .push(BehaviourEventOut::PeerDisconnected(peer_id)),
+        }
+    }
+}
+
+
+impl NetworkBehaviourEventProcess<RequestResponseEvent<Vec<u8>, Vec<u8>>>
+    for Behaviour
+{
+    fn inject_event(
+        &mut self,
+        event: RequestResponseEvent<Vec<u8>, Vec<u8>>,
+    ) {
+        match event {
+            RequestResponseEvent::Message { peer, message } => match message {
+                RequestResponseMessage::Request {
+                    request,
+                    channel,
+                    request_id: _,
+                } => {
+                    self.events.push(BehaviourEventOut::MessageReceived {
+                        source: peer,
+                        data: request,
+                    });
+                    debug!("Request Response message: {:?}", channel);
+                }
+                RequestResponseMessage::Response {
+                    request_id,
+                    response,
+                } => {
+
+                }
+            },
+            RequestResponseEvent::OutboundFailure {
+                peer,
+                request_id,
+                error,
+            } => {
+                debug!(
+                    "ChainExchange outbound error (peer: {:?}) (id: {:?}): {:?}",
+                    peer, request_id, error
+                );
+
+
+            }
+            RequestResponseEvent::InboundFailure {
+                peer,
+                error,
+                request_id: _,
+            } => {
+                debug!(
+                    "ChainExchange inbound error (peer: {:?}): {:?}",
+                    peer, error
+                );
+            }
+            _ => {}
         }
     }
 }

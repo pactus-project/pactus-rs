@@ -9,16 +9,19 @@ use async_trait::async_trait;
 use behaviour::{Behaviour, BehaviourEventOut};
 use futures::select;
 use futures_util::stream::StreamExt;
+use libp2p::gossipsub::IdentTopic;
 pub use libp2p::gossipsub::{Topic, TopicHash};
-use libp2p::identity;
 use libp2p::swarm::SwarmEvent;
 use libp2p::Swarm;
-use log::{debug, error, info, trace, warn};
+use libp2p::{identity, PeerId};
+use log::{debug, error, info, warn};
 use std::time::Duration;
 
 pub(crate) struct ZarbNetwork {
     config: Config,
     swarm: Swarm<Behaviour>,
+    //general_topic: IdentTopic,
+    //consensus_topic: IdentTopic,
     message_receiver: Receiver<NetworkMessage>,
     message_sender: Sender<NetworkMessage>,
     event_receiver: Receiver<NetworkEvent>,
@@ -32,17 +35,9 @@ async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
 }
 
 impl NetworkService for ZarbNetwork {
-    fn register_topic(&mut self, topic_name: String) -> Result<bool> {
-        let topic = Topic::new(format!(
-            "/{}/pubsub/v1/{}",
-            self.config.network_name, topic_name
-        ));
-        self.swarm
-            .behaviour_mut()
-            .subscribe(&topic)
-            .map_err(|err| Error::NetworkError(format!("{:?}", err)))
+    fn self_id(&self) -> PeerId {
+        todo!()
     }
-
     fn message_sender(&self) -> Sender<NetworkMessage> {
         self.message_sender.clone()
     }
@@ -55,9 +50,20 @@ impl NetworkService for ZarbNetwork {
 #[async_trait]
 impl crate::Service for ZarbNetwork {
     async fn start(self) {
+        let general_topic = self.get_general_topic();
+        let consensus_topic = self.get_consensus_topic();
         let mut swarm_stream = self.swarm.fuse();
         let mut network_stream = self.message_receiver.fuse();
         let mut interval = stream::interval(Duration::from_secs(10)).fuse();
+        let mut has_joined_consensus_topic = false;
+
+        // Join general topic by starting the service,
+        // We will join consensus topic later (after syncing)
+        swarm_stream
+            .get_mut()
+            .behaviour_mut()
+            .subscribe(&general_topic)
+            .expect("Unable to join general topic");
 
         loop {
             select! {
@@ -73,12 +79,11 @@ impl crate::Service for ZarbNetwork {
                         }
                         SwarmEvent::Behaviour(BehaviourEventOut::MessageReceived {
                             source,
-                            topic,
                             data,
                         }) => {
                             debug!("Got a Gossip message from {:?}: {:?}", source, data);
                             emit_event(&self.event_sender, NetworkEvent::MessageReceived {
-                                source, topic, data
+                                source,  data
                             }).await;
                         }
                         _ => {
@@ -89,10 +94,21 @@ impl crate::Service for ZarbNetwork {
                 },
                 message = network_stream.next() => match message {
                     Some(msg) => match msg {
-                        NetworkMessage::PubsubMessage{topic, data} =>{
-                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(topic, data) {
+                        NetworkMessage::GeneralMessage{data} =>{
+                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(general_topic.clone(), data) {
                                 warn!("Failed to publish message: {:?}", e);
                             }
+                        }
+                        NetworkMessage::ConsensusMessage{data} =>{
+                            if !has_joined_consensus_topic {
+                                swarm_stream.get_mut().behaviour_mut().subscribe(&consensus_topic).expect("Unable to join consensus topic");
+                                has_joined_consensus_topic = true;
+                            }
+                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(consensus_topic.clone(), data) {
+                                warn!("Failed to publish message: {:?}", e);
+                            }
+                        }
+                        NetworkMessage::StreamMessage{target, data} =>{
                         }
                     },
                     None => { break; }
@@ -148,6 +164,34 @@ impl ZarbNetwork {
     pub fn name(&self) -> String {
         self.config.network_name.clone()
     }
+
+    fn get_topic(&self, topic_name: &str) -> IdentTopic {
+        let topic_name = format!("/{}/topic/{}/v1", self.config.network_name, topic_name);
+        Topic::new(topic_name)
+    }
+
+    fn get_general_topic(&self) -> IdentTopic {
+        self.get_topic("general")
+    }
+
+    fn get_consensus_topic(&self) -> IdentTopic {
+        self.get_topic("consensus")
+    }
+
+    // fn join_general_topic(&mut self) -> Result<bool> {
+    //     self.join_topic(&self.get_general_topic())
+    // }
+
+    // fn join_consensus_topic(&mut self) -> Result<bool> {
+    //     self.join_topic(&self.get_consensus_topic())
+    // }
+
+    // pub fn join_topic(&mut self, topic: &IdentTopic) -> Result<bool> {
+    //     self.swarm
+    //         .behaviour_mut()
+    //         .subscribe(&topic)
+    //         .map_err(|err| Error::NetworkError(format!("{:?}", err)))
+    // }
 }
 
 #[cfg(test)]
