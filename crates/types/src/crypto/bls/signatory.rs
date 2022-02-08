@@ -4,7 +4,7 @@ use crate::crypto::public_key::PublicKey;
 use crate::crypto::signatory::Signatory;
 use crate::crypto::signature::Signature;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BLSSignatory {
     pub pub_key: BLSPublicKey,
     pub sig: BLSSignature,

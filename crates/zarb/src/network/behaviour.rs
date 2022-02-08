@@ -6,7 +6,7 @@ use libp2p::{
     gossipsub::{
         error::{PublishError, SubscriptionError},
         Gossipsub, GossipsubConfigBuilder, GossipsubEvent, GossipsubMessage, IdentTopic,
-        MessageAuthenticity, MessageId, TopicHash,
+        MessageAuthenticity, MessageId,
     },
     identify::{Identify, IdentifyConfig, IdentifyEvent},
     kad::{record::store::MemoryStore, Kademlia, KademliaConfig, KademliaEvent, QueryId},
@@ -14,12 +14,12 @@ use libp2p::{
     multiaddr::Protocol,
     ping::{Ping, PingEvent, PingFailure, PingSuccess},
     swarm::{
-        toggle::Toggle, NetworkBehaviour, NetworkBehaviourAction, NetworkBehaviourEventProcess,
+        behaviour::toggle::Toggle, NetworkBehaviour, NetworkBehaviourAction, NetworkBehaviourEventProcess,
         PollParameters,
     },
     NetworkBehaviour,
 };
-use log::{debug, trace, warn};
+use log::{debug, trace, warn, info};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
@@ -49,10 +49,7 @@ pub struct Behaviour {
 pub enum BehaviourEventOut {
     PeerConnected(PeerId),
     PeerDisconnected(PeerId),
-    MessageReceived {
-        source: PeerId,
-        data: Vec<u8>,
-    },
+    MessageReceived { source: PeerId, data: Vec<u8> },
 }
 
 impl Behaviour {
@@ -88,10 +85,10 @@ impl Behaviour {
 
         // Kademlia config
         let store = MemoryStore::new(local_peer_id.to_owned());
-        let mut kad_config = KademliaConfig::default();
-        let network = format!("/{}/kad/v1", config.network_name);
-        kad_config.set_protocol_name(network.as_bytes().to_vec());
         let kademlia_opt = if config.kademlia {
+            let mut kad_config = KademliaConfig::default();
+            let protocol_name = format!("/{}/kad/v1", config.network_name);
+            kad_config.set_protocol_name(protocol_name.as_bytes().to_vec());
             let mut kademlia = Kademlia::with_config(local_peer_id.to_owned(), store, kad_config);
             for multiaddr in config.bootstrap_peers.iter() {
                 let mut addr = multiaddr.to_owned();
@@ -209,7 +206,7 @@ impl NetworkBehaviourEventProcess<MdnsEvent> for Behaviour {
         match event {
             MdnsEvent::Discovered(list) => {
                 for (peer, addr) in list {
-                    trace!("mdns: Discovered peer {}", peer.to_base58());
+                    info!("mdns: Discovered peer {}", peer.to_base58());
                     self.add_peer(peer.clone());
                     if self.kademlia.is_enabled() {
                         self.kademlia.as_mut().unwrap().add_address(&peer, addr);
@@ -299,14 +296,8 @@ impl NetworkBehaviourEventProcess<<Swarm as libp2p::swarm::NetworkBehaviour>::Ou
     }
 }
 
-
-impl NetworkBehaviourEventProcess<RequestResponseEvent<Vec<u8>, Vec<u8>>>
-    for Behaviour
-{
-    fn inject_event(
-        &mut self,
-        event: RequestResponseEvent<Vec<u8>, Vec<u8>>,
-    ) {
+impl NetworkBehaviourEventProcess<RequestResponseEvent<Vec<u8>, Vec<u8>>> for Behaviour {
+    fn inject_event(&mut self, event: RequestResponseEvent<Vec<u8>, Vec<u8>>) {
         match event {
             RequestResponseEvent::Message { peer, message } => match message {
                 RequestResponseMessage::Request {
@@ -323,9 +314,7 @@ impl NetworkBehaviourEventProcess<RequestResponseEvent<Vec<u8>, Vec<u8>>>
                 RequestResponseMessage::Response {
                     request_id,
                     response,
-                } => {
-
-                }
+                } => {}
             },
             RequestResponseEvent::OutboundFailure {
                 peer,
@@ -336,8 +325,6 @@ impl NetworkBehaviourEventProcess<RequestResponseEvent<Vec<u8>, Vec<u8>>>
                     "ChainExchange outbound error (peer: {:?}) (id: {:?}): {:?}",
                     peer, request_id, error
                 );
-
-
             }
             RequestResponseEvent::InboundFailure {
                 peer,

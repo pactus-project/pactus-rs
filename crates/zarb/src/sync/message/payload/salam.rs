@@ -1,6 +1,7 @@
 use super::Payload;
 use crate::error::{Error, Result};
 use minicbor::{Decode, Encode};
+use zarb_types::crypto::bls::public_key;
 use zarb_types::crypto::public_key::PublicKey;
 use zarb_types::{crypto::bls::public_key::BLSPublicKey, hash::Hash32};
 
@@ -9,7 +10,7 @@ use zarb_types::{crypto::bls::public_key::BLSPublicKey, hash::Hash32};
 
 pub struct SalamPayload {
     #[n(1)]
-    node_version: String,
+    agent: String,
     #[n(2)]
     moniker: String,
     #[n(3)]
@@ -20,6 +21,25 @@ pub struct SalamPayload {
     height: i32,
     #[n(6)]
     flags: u32,
+}
+
+impl SalamPayload {
+    pub fn new(
+        moniker: String,
+        public_key: BLSPublicKey,
+        genesis_hash: Hash32,
+        height: i32,
+        flags: u32,
+    ) -> Self {
+        SalamPayload {
+            agent: format!("zarb-rs/{}", env!("CARGO_PKG_VERSION")),
+            moniker,
+            public_key,
+            genesis_hash,
+            height,
+            flags,
+        }
+    }
 }
 
 impl Payload for SalamPayload {

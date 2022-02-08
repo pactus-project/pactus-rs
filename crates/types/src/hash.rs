@@ -7,7 +7,7 @@ const HASH32_SIZE: usize = 32;
 pub struct Hash32([u8; HASH32_SIZE]);
 
 impl Hash32 {
-    pub fn new(data: &[u8]) -> Self {
+    pub fn calculate(data: &[u8]) -> Self {
         let digest = Params::new()
             .hash_length(32)
             .to_state()
@@ -45,6 +45,6 @@ mod tests {
     fn test_calc() {
         let buf = hex::decode("12b38977f2d67f06f0c0cd54aaf7324cf4fee184398ea33d295e8d1543c2ee1a")
             .unwrap();
-        assert_eq!(Hash32::new("zarb".as_bytes()).0.to_vec(), buf.to_vec());
+        assert_eq!(Hash32::calculate("zarb".as_bytes()).0.to_vec(), buf.to_vec());
     }
 }

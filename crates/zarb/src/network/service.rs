@@ -20,8 +20,6 @@ use std::time::Duration;
 pub(crate) struct ZarbNetwork {
     config: Config,
     swarm: Swarm<Behaviour>,
-    //general_topic: IdentTopic,
-    //consensus_topic: IdentTopic,
     message_receiver: Receiver<NetworkMessage>,
     message_sender: Sender<NetworkMessage>,
     event_receiver: Receiver<NetworkEvent>,
@@ -30,7 +28,7 @@ pub(crate) struct ZarbNetwork {
 
 async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
     if sender.send(event).await.is_err() {
-        error!("Failed to emit event: Network channel receiver has been dropped");
+        error!("network channel receiver has been dropped");
     }
 }
 
@@ -70,18 +68,18 @@ impl crate::Service for ZarbNetwork {
                 swarm_event = swarm_stream.next() => match swarm_event {
                     Some(event) => match event {
                         SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) => {
-                            info!("Peer dialed {:?}", peer_id);
+                            info!("peer dialed {:?}", peer_id);
                             emit_event(&self.event_sender, NetworkEvent::PeerConnected(peer_id)).await;
                         }
                         SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) => {
-                            info!("Peer disconnected {:?}", peer_id);
+                            info!("peer disconnected {:?}", peer_id);
                             emit_event(&self.event_sender, NetworkEvent::PeerDisconnected(peer_id)).await;
                         }
                         SwarmEvent::Behaviour(BehaviourEventOut::MessageReceived {
                             source,
                             data,
                         }) => {
-                            debug!("Got a Gossip message from {:?}: {:?}", source, data);
+                            debug!("got a Gossip message from {:?}", source);
                             emit_event(&self.event_sender, NetworkEvent::MessageReceived {
                                 source,  data
                             }).await;
@@ -96,7 +94,7 @@ impl crate::Service for ZarbNetwork {
                     Some(msg) => match msg {
                         NetworkMessage::GeneralMessage{data} =>{
                             if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(general_topic.clone(), data) {
-                                warn!("Failed to publish message: {:?}", e);
+                                warn!("failed to publish message: {:?}", e);
                             }
                         }
                         NetworkMessage::ConsensusMessage{data} =>{
@@ -105,7 +103,7 @@ impl crate::Service for ZarbNetwork {
                                 has_joined_consensus_topic = true;
                             }
                             if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(consensus_topic.clone(), data) {
-                                warn!("Failed to publish message: {:?}", e);
+                                warn!("failed to publish message: {:?}", e);
                             }
                         }
                         NetworkMessage::StreamMessage{target, data} =>{
@@ -114,7 +112,7 @@ impl crate::Service for ZarbNetwork {
                     None => { break; }
                 },
                 interval_event = interval.next() => if interval_event.is_some() {
-                    debug!("Peers connected: {}", swarm_stream.get_mut().behaviour_mut().peers().len());
+                    debug!("connected peers: {}", swarm_stream.get_mut().behaviour_mut().peers().len());
                 }
             }
         }
@@ -126,7 +124,7 @@ impl ZarbNetwork {
         let local_key = identity::Keypair::generate_ed25519();
         let local_public = local_key.public();
         let local_peer_id = local_public.clone().to_peer_id();
-        info!("Local node identity is: {}", local_peer_id.to_base58());
+        info!("local node identity is: {}", local_peer_id.to_base58());
 
         let transport = transport::build_transport(&local_key);
         let behaviour = Behaviour::new(&local_key, &config);
@@ -137,13 +135,13 @@ impl ZarbNetwork {
 
         for to_dial in &config.bootstrap_peers {
             libp2p::Swarm::dial(&mut swarm, to_dial.clone()).map_err(|err| {
-                Error::NetworkError(format!("Dial {:?} failed: {:?}", to_dial, err))
+                Error::NetworkError(format!("dial {:?} failed: {:?}", to_dial, err))
             })?;
         }
 
         // Bootstrap with Kademlia
         if let Err(e) = swarm.behaviour_mut().bootstrap() {
-            warn!("Failed to bootstrap with Kademlia: {}", e);
+            warn!("failed to bootstrap with Kademlia: {}", e);
         }
 
         let (message_sender, message_receiver) = async_std::channel::unbounded();
