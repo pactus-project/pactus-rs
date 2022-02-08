@@ -1,25 +1,27 @@
 use super::public_key::BLSPublicKey;
 use super::signature::BLSSignature;
+use crate::crypto::public_key::PublicKey;
 use crate::crypto::secret_key::SecretKey;
+use crate::crypto::signature::Signature;
 use crate::error::{Error, Result};
 use bls12_381_plus::{G2Projective, Scalar};
+use group::Group;
+use group::ff::Field;
+use rand::rngs::OsRng;
 
 const SECRET_KEY_SIZE: usize = 32;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BLSSecretKey(pub(super) Scalar);
 
 impl SecretKey for BLSSecretKey {
-    type PublicKey = super::public_key::BLSPublicKey;
-    type Signature = super::signature::BLSSignature;
-
-    fn public_key(&self) -> BLSPublicKey {
-        BLSPublicKey(G2Projective::generator() * self.0)
+    fn public_key(&self) -> Box<dyn PublicKey> {
+        Box::new(BLSPublicKey(G2Projective::generator() * self.0))
     }
 
-    fn sign(&self, msg: &[u8]) -> BLSSignature {
+    fn sign(&self, msg: &[u8]) -> Box<dyn Signature> {
         let g1 = BLSSignature::hash_msg(msg);
-        BLSSignature(g1 * self.0)
+        Box::new(BLSSignature(g1 * self.0))
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -28,6 +30,16 @@ impl SecretKey for BLSSecretKey {
 }
 
 impl BLSSecretKey {
+    pub fn random() -> Self {
+        let rng = &mut OsRng::default();
+        Self(Scalar::random(rng))
+    }
+
+    pub fn from_string(hex: &str) -> Result<Self> {
+        let data = hex::decode(hex)?;
+        Self::from_bytes(&data)
+    }
+
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
         let mut data_be = data.to_vec();
         data_be.reverse(); // converting to big-endian
@@ -43,9 +55,14 @@ impl BLSSecretKey {
         Ok(Self(key_opt.unwrap()))
     }
 
+    pub fn to_string(&self) -> String {
+        hex::encode(self.0.to_bytes())
+    }
+
     pub fn to_bytes(&self) -> [u8; SECRET_KEY_SIZE] {
         self.0.to_bytes()
     }
+
 }
 
 super::impl_cbor!(BLSSecretKey);
@@ -67,8 +84,8 @@ mod tests {
         let pub_key = super::BLSPublicKey::from_bytes(pub_buf.as_slice()).unwrap();
         let sig = super::BLSSignature::from_bytes(sig_buf.as_slice()).unwrap();
 
-        assert_eq!(sec_key.public_key(), pub_key);
-        assert_eq!(sec_key.sign(msg), sig);
+        assert_eq!(sec_key.public_key().to_bytes(), pub_buf);
+        assert_eq!(sec_key.sign(msg).to_bytes(), sig_buf);
         assert!(pub_key.verify(&sig, msg));
     }
 }

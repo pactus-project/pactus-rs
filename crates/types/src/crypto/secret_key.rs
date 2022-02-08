@@ -1,8 +1,9 @@
-pub trait SecretKey {
-    type PublicKey: super::public_key::PublicKey;
-    type Signature: super::signature::Signature;
+use std::fmt::Debug;
 
-    fn public_key(&self) -> Self::PublicKey;
-    fn sign(&self, msg: &[u8]) -> Self::Signature;
+use super::{public_key::PublicKey, signature::Signature};
+
+pub trait SecretKey: Debug {
+    fn public_key(&self) -> Box<dyn PublicKey>;
+    fn sign(&self, msg: &[u8]) -> Box<dyn Signature>;
     fn to_bytes(&self) -> Vec<u8>;
 }

@@ -1,7 +1,7 @@
 pub mod commands;
 pub mod file;
 
-pub use commands::Command;
+pub use crate::commands::Command;
 
 fn main() {
     match Command::from_args() {

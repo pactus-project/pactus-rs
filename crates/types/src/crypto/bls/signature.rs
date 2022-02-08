@@ -5,7 +5,7 @@ use group::Curve;
 
 const SIGNATURE_KEY_SIZE: usize = 48;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BLSSignature(pub(super) G1Projective);
 
 impl Signature for BLSSignature {

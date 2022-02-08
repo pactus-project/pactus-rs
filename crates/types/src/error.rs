@@ -3,9 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("CBOR decoding error")]
+    #[error("Decoding error")]
     DecodeError(String),
-    #[error("CBOR encoding error")]
+    #[error("Encoding error")]
     EncodeError(String),
     #[error("Invalid data length")]
     InvalidLength { expected: usize, found: usize },
@@ -26,3 +26,11 @@ impl From<decode::Error> for Error {
         Error::DecodeError(format!("{}", err))
     }
 }
+
+impl From<hex::FromHexError> for Error {
+    fn from(err: hex::FromHexError) -> Self {
+        Error::DecodeError(format!("{}", err))
+    }
+}
+
+

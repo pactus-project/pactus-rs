@@ -1,35 +1,22 @@
-use crate::file::{load_config_file, load_genesis_file};
+use crate::file::{load_json_file, load_text_file, load_toml_file};
 use anyhow::Result;
 use async_std::task;
-use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::{env, thread};
+use std::thread;
 use structopt::StructOpt;
 use zarb::config::Config;
 use zarb::network::create_network_service;
 use zarb::sync::create_sync_service;
 use zarb::Service;
+use zarb_types::crypto::bls::secret_key::BLSSecretKey;
+use zarb_types::crypto::signer::Signer;
 
-lazy_static! {
-    static ref DEFAULT_WORKING_DIR: String =
-        format!("{}/zarb", env::var("HOME").as_deref().unwrap_or("."));
-}
-
-/// The `generate-node-key` command
 #[derive(Debug, StructOpt)]
 #[structopt(name = "start", about = "run the node")]
 pub struct StartCmd {
-    #[structopt(short = "w", default_value = &DEFAULT_WORKING_DIR)]
+    #[structopt(short = "w", default_value = &super::DEFAULT_WORKING_DIR)]
     working_dir: String,
-}
-
-impl Default for StartCmd {
-    fn default() -> Self {
-        Self {
-            working_dir: format! {"{:?}/zarb", dirs::home_dir().unwrap().to_str()},
-        }
-    }
 }
 
 impl StartCmd {
@@ -45,8 +32,12 @@ impl StartCmd {
 
         pretty_env_logger::init();
 
+        let hex: String = load_text_file(dir.clone() + super::VALIDATOR_KEY_FILE_NAME)?;
+        let validator_key = BLSSecretKey::from_string(&hex)?;
+        let signer = Signer::new(Box::new(validator_key));
+
         //load the configuration file
-        let config: Config = crate::file::load_config_file(dir.clone() + "/config.toml")?;
+        let config: Config = load_toml_file(dir.clone() + super::CONFIG_FILE_NAME)?;
 
         //load the genesis file
         //let genesis: Genesis = file::load_genesis_file(dir.clone() + "/genesis.json").unwrap();

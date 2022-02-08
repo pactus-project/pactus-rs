@@ -1,10 +1,18 @@
-use anyhow::Result;
-use dirs::home_dir;
-use std::path::PathBuf;
-use structopt::StructOpt;
-
 pub mod init;
 pub mod start;
+
+use anyhow::Result;
+use lazy_static::lazy_static;
+use structopt::StructOpt;
+use std::env;
+
+pub const CONFIG_FILE_NAME: &str = "config.toml";
+pub const VALIDATOR_KEY_FILE_NAME: &str = "validator_key";
+
+lazy_static! {
+    static ref DEFAULT_WORKING_DIR: String =
+        format!("{}/zarb", env::var("HOME").as_deref().unwrap_or("."));
+}
 
 use crate::commands::init::InitCmd;
 use crate::commands::start::StartCmd;
@@ -27,11 +35,6 @@ impl Command {
     /// Wrapper around `StructOpt::from_args` method.
     pub fn from_args() -> Self {
         <Self as StructOpt>::from_args()
-    }
-
-    pub fn get_homedir() -> Option<PathBuf> {
-        let path = home_dir();
-        return path;
     }
 }
 
