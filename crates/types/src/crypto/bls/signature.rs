@@ -37,4 +37,4 @@ impl BLSSignature {
     }
 }
 
-super::impl_cbor!(BLSSignature);
+super::impl_common!(BLSSignature);

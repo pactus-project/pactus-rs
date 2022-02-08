@@ -16,16 +16,15 @@ pub struct BLSSecretKey(pub(super) Scalar);
 
 impl SecretKey for BLSSecretKey {
     fn public_key(&self) -> Box<dyn PublicKey> {
-        Box::new(BLSPublicKey(G2Projective::generator() * self.0))
+        Box::new(Self::public_key(self))
     }
 
     fn sign(&self, msg: &[u8]) -> Box<dyn Signature> {
-        let g1 = BLSSignature::hash_msg(msg);
-        Box::new(BLSSignature(g1 * self.0))
+        Box::new(Self::sign(self, msg))
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        BLSSecretKey::to_bytes(self).to_vec()
+        Self::to_bytes(self).to_vec()
     }
 }
 
@@ -33,11 +32,6 @@ impl BLSSecretKey {
     pub fn random() -> Self {
         let rng = &mut OsRng::default();
         Self(Scalar::random(rng))
-    }
-
-    pub fn from_string(hex: &str) -> Result<Self> {
-        let data = hex::decode(hex)?;
-        Self::from_bytes(&data)
     }
 
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
@@ -55,22 +49,27 @@ impl BLSSecretKey {
         Ok(Self(key_opt.unwrap()))
     }
 
-    pub fn to_string(&self) -> String {
-        hex::encode(self.0.to_bytes())
+    pub fn to_bytes(&self) -> [u8; SECRET_KEY_SIZE] {
+        let mut data = self.0.to_bytes();
+        data.reverse();
+        data
     }
 
-    pub fn to_bytes(&self) -> [u8; SECRET_KEY_SIZE] {
-        self.0.to_bytes()
+    pub fn public_key(&self) -> BLSPublicKey {
+        BLSPublicKey(G2Projective::generator() * self.0)
+    }
+
+    pub fn sign(&self, msg: &[u8]) -> BLSSignature {
+        let g1 = BLSSignature::hash_msg(msg);
+        BLSSignature(g1 * self.0)
     }
 
 }
 
-super::impl_cbor!(BLSSecretKey);
+super::impl_common!(BLSSecretKey);
 
 #[cfg(test)]
 mod tests {
-    use crate::crypto::secret_key::SecretKey;
-
     #[test]
     fn test_decoding() {
         let sec_buf =
@@ -84,8 +83,8 @@ mod tests {
         let pub_key = super::BLSPublicKey::from_bytes(pub_buf.as_slice()).unwrap();
         let sig = super::BLSSignature::from_bytes(sig_buf.as_slice()).unwrap();
 
-        assert_eq!(sec_key.public_key().to_bytes(), pub_buf);
-        assert_eq!(sec_key.sign(msg).to_bytes(), sig_buf);
+        assert_eq!(sec_key.public_key(), pub_key);
+        assert_eq!(sec_key.sign(msg), sig);
         assert!(pub_key.verify(&sig, msg));
     }
 }

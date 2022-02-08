@@ -21,9 +21,12 @@ pub struct InitCmd {
 impl InitCmd {
     /// Run the command
     pub fn execute(&self) -> Result<()> {
-        let dir = self.working_dir.clone();
         let sec = BLSSecretKey::random();
         let node_config = Config::default();
+
+        let mut dir = self.working_dir.clone();
+        dir.push(std::path::MAIN_SEPARATOR);
+
 
         save_toml_file(&node_config, dir.clone() + super::CONFIG_FILE_NAME)?;
         save_text_file(

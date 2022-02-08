@@ -12,10 +12,6 @@ const PUBLIC_KEY_SIZE: usize = 96;
 pub struct BLSPublicKey(pub(super) G2Projective);
 
 impl PublicKey for BLSPublicKey {
-    fn address(&self) -> Address {
-        todo!()
-    }
-
     fn to_bytes(&self) -> Vec<u8> {
         BLSPublicKey::to_bytes(self).to_vec()
     }
@@ -53,4 +49,4 @@ impl BLSPublicKey {
     }
 }
 
-super::impl_cbor!(BLSPublicKey);
+super::impl_common!(BLSPublicKey);

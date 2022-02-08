@@ -2,9 +2,22 @@ pub mod public_key;
 pub mod secret_key;
 pub mod signatory;
 pub mod signature;
+pub mod signer;
 
-macro_rules! impl_cbor {
+
+macro_rules! impl_common {
     ($ty:ty) => {
+        impl $ty {
+            pub fn from_string(hex: &str) -> Result<Self> {
+                let data = hex::decode(hex)?;
+                Self::from_bytes(&data)
+            }
+
+            pub fn to_string(&self) -> String {
+                hex::encode(self.to_bytes())
+            }
+        }
+
         impl minicbor::Encode for $ty {
             fn encode<W>(
                 &self,
@@ -29,4 +42,4 @@ macro_rules! impl_cbor {
     };
 }
 
-pub(super) use impl_cbor;
+pub(super) use impl_common;
