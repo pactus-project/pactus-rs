@@ -1,15 +1,14 @@
 use super::Payload;
 use crate::error::{Error, Result};
+use libp2p::{identity, PeerId};
 use minicbor::{Decode, Encode};
-use zarb_types::crypto::bls::public_key;
-use zarb_types::crypto::bls::signature::BLSSignature;
+use zarb_types::crypto::bls::{public_key, signature::BLSSignature};
 use zarb_types::crypto::public_key::PublicKey;
 use zarb_types::{crypto::bls::public_key::BLSPublicKey, hash::Hash32};
 
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]
-
-pub struct SalamPayload {
+pub struct AleykPayload {
     #[n(1)]
     pub agent: String,
     #[n(2)]
@@ -23,31 +22,39 @@ pub struct SalamPayload {
     #[n(6)]
     pub flags: u32,
     #[n(7)]
-    pub genesis_hash: Hash32,
+    target: String,
+    #[n(8)]
+    code: i32,
+    #[n(9)]
+    pub message: String,
 }
 
-impl SalamPayload {
+impl AleykPayload {
     pub fn new(
         moniker: String,
         public_key: BLSPublicKey,
         signature: BLSSignature,
         height: i32,
         flags: u32,
-        genesis_hash: Hash32,
+        target: PeerId,
+        code: i32,
+        message: String,
     ) -> Self {
-        SalamPayload {
+        AleykPayload {
             agent: crate::agent(),
             moniker,
             public_key,
             signature,
             height,
             flags,
-            genesis_hash,
+            target: target.to_string(),
+            code,
+            message,
         }
     }
 }
 
-impl Payload for SalamPayload {
+impl Payload for AleykPayload {
     fn sanity_check(&self) -> super::Result<()> {
         if self.height < 0 {
             return Err(Error::InvalidMessage(format!(
@@ -65,7 +72,7 @@ impl Payload for SalamPayload {
     }
 
     fn payload_type(&self) -> super::Type {
-        super::Type::Salam
+        super::Type::Aleyk
     }
 
     fn to_bytes(&self) -> Result<Vec<u8>> {

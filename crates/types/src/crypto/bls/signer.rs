@@ -3,7 +3,7 @@ use crate::{
     address::Address,
     crypto::{
         public_key::PublicKey,
-        signer::{Signable, Signer},
+        signer::{Signable, Signer}, secret_key::SecretKey,
     },
 };
 

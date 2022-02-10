@@ -7,6 +7,8 @@ use std::vec::Vec;
 #[derive(Debug)]
 pub struct Message {
     pub initiator: PeerId,
+    pub payload_type: payload::Type,
+    pub payload_data: ByteVec,
     pub payload: Box<dyn payload::Payload>,
 }
 
@@ -26,8 +28,18 @@ pub struct RawMessage {
 }
 
 impl Message {
-    pub fn new(initiator: PeerId, payload: Box<dyn payload::Payload>) -> Result<Self> {
-        Ok(Self { initiator, payload })
+    pub fn new(
+        initiator: PeerId,
+        payload_type: payload::Type,
+        payload_data: ByteVec,
+        payload: Box<dyn payload::Payload>,
+    ) -> Result<Self> {
+        Ok(Self {
+            initiator,
+            payload_type,
+            payload_data,
+            payload,
+        })
     }
 
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
@@ -46,7 +58,7 @@ impl Message {
             }
         };
 
-        Self::new(initiator, payload)
+        Self::new(initiator, raw.payload_type, raw.payload_data, payload)
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {

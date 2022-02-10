@@ -17,7 +17,7 @@ use libp2p::{identity, PeerId};
 use log::{debug, error, info, warn};
 use std::time::Duration;
 
-pub(crate) struct ZarbNetwork {
+pub(super) struct ZarbNetwork {
     config: Config,
     swarm: Swarm<Behaviour>,
     message_receiver: Receiver<NetworkMessage>,

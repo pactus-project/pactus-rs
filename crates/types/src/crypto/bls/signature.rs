@@ -10,7 +10,7 @@ pub struct BLSSignature(pub(super) G1Projective);
 
 impl Signature for BLSSignature {
     fn to_bytes(&self) -> Vec<u8> {
-        BLSSignature::to_bytes(self).to_vec()
+        BLSSignature::to_fixed_bytes(self).to_vec()
     }
 }
 
@@ -25,7 +25,7 @@ impl BLSSignature {
         Ok(Self(G1Projective::from(&key_opt.unwrap())))
     }
 
-    pub fn to_bytes(&self) -> [u8; SIGNATURE_KEY_SIZE] {
+    pub fn to_fixed_bytes(&self) -> [u8; SIGNATURE_KEY_SIZE] {
         self.0.to_affine().to_compressed()
     }
 
@@ -37,4 +37,4 @@ impl BLSSignature {
     }
 }
 
-super::impl_common!(BLSSignature);
+crate::crypto::impl_common!(BLSSignature);

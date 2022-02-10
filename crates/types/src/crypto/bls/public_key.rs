@@ -13,7 +13,7 @@ pub struct BLSPublicKey(pub(super) G2Projective);
 
 impl PublicKey for BLSPublicKey {
     fn to_bytes(&self) -> Vec<u8> {
-        BLSPublicKey::to_bytes(self).to_vec()
+        BLSPublicKey::to_fixed_bytes(self).to_vec()
     }
 
     fn sanity_check(&self) -> Result<()> {
@@ -31,7 +31,7 @@ impl BLSPublicKey {
         Ok(Self(G2Projective::from(&key_opt.unwrap())))
     }
 
-    pub fn to_bytes(&self) -> [u8; PUBLIC_KEY_SIZE] {
+    pub fn to_fixed_bytes(&self) -> [u8; PUBLIC_KEY_SIZE] {
         self.0.to_affine().to_compressed()
     }
 
@@ -49,4 +49,4 @@ impl BLSPublicKey {
     }
 }
 
-super::impl_common!(BLSPublicKey);
+crate::crypto::impl_common!(BLSPublicKey);

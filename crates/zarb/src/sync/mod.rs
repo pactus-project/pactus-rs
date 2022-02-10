@@ -1,5 +1,6 @@
 pub mod config;
 pub mod firewall;
+pub mod handler;
 pub mod message;
 pub mod service;
 
