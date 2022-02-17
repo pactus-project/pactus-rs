@@ -2,7 +2,7 @@ use super::{message::payload::Payload, service::ZarbSync};
 use crate::error::Result;
 use minicbor::Decode;
 
-pub mod salam;
+pub mod hello;
 pub mod heartbeat;
 
 pub(super) trait HandlerStrategy: Send {

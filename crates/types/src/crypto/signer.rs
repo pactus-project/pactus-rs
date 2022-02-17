@@ -11,4 +11,5 @@ pub trait Signer {
     fn public_key(&self) -> &dyn PublicKey;
     fn address(&self) -> &Address;
     fn sign(&self, s: &dyn Signable);
+    //fn sign_data(&self, )
 }

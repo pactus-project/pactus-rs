@@ -4,7 +4,8 @@ use async_std::task;
 use zarb_types::crypto::bls::signer::BLSSigner;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::thread;
+use std::thread::{self, sleep};
+use std::time::Duration;
 use structopt::StructOpt;
 use zarb::config::Config;
 use zarb::network::create_network_service;
@@ -52,6 +53,9 @@ impl StartCmd {
         let network_task = task::spawn(async {
             network.start().await;
         });
+
+        // Wait for network to start
+        sleep(Duration::from_secs(2));
 
         let sync_task = task::spawn(async {
             sync.start().await;

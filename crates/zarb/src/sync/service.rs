@@ -1,6 +1,6 @@
-use super::handler::salam::SalamHandler;
+use super::handler::hello::HelloHandler;
 use super::handler::Handler;
-use super::message::payload::salam::SalamPayload;
+use super::message::payload::hello::HelloPayload;
 use super::message::payload::{Payload, Type as PayloadType};
 use super::SyncService;
 use super::{config::Config, firewall::firewall::Firewall};
@@ -20,9 +20,11 @@ use std::thread::sleep;
 use std::time::Duration;
 use zarb_types::crypto::bls::signer::BLSSigner;
 use zarb_types::hash::Hash32;
+use libp2p::{identity, PeerId};
 
 pub(super) struct ZarbSync {
     config: Config,
+    self_id: PeerId,
     signer: BLSSigner,
     firewall: Firewall,
     handlers: BTreeMap<PayloadType, Handler>,
@@ -32,25 +34,51 @@ pub(super) struct ZarbSync {
 
 impl SyncService for ZarbSync {}
 
+impl ZarbSync {
+    pub fn new(
+        config: Config,
+        signer: BLSSigner,
+        network: &mut dyn NetworkService,
+    ) -> Result<Self> {
+        let mut handlers: BTreeMap<PayloadType, Handler> = BTreeMap::new();
+
+        let slm = HelloHandler::new();
+
+        handlers.insert(PayloadType::Hello, Handler::new(Box::new(slm)));
+
+        Ok(Self {
+            self_id: network.self_id(),
+            signer,
+            firewall: Firewall::new(&config.firewall)?,
+            config,
+            handlers,
+            network_message_sender: network.message_sender(),
+            network_event_receiver: network.event_receiver(),
+        })
+    }
+
+    fn broadcast_hello(&self) {
+        let pld = HelloPayload::new(
+            self.self_id,
+            self.config.moniker.clone(),
+            0,
+            0,
+            Hash32::calculate("zarb".as_bytes()),
+        );
+        let msg = NetworkMessage::GeneralMessage {
+            data: pld.to_bytes().unwrap(),
+        };
+        self.network_message_sender.try_send(msg).unwrap();
+    }
+}
+
 #[async_trait]
 impl crate::Service for ZarbSync {
     async fn start(self) {
         let mut heartbeat_ticker = stream::interval(self.config.heartbeat_timeout).fuse();
         let mut network_stream = self.network_event_receiver.clone().fuse();
 
-        sleep(Duration::from_secs(2));
-        // let sig = self.signer.sign(self.signer.public_key().to_bytes());
-        // let pld = SalamPayload::new(
-        //     self.config.moniker.clone(),
-        //     self.signer.public_key(),
-        //     0,
-        //     0,
-        //     Hash32::calculate("zarb".as_bytes()),
-        // );
-        // let msg = NetworkMessage::GeneralMessage {
-        //     data: pld.to_bytes().unwrap(),
-        // };
-        // self.network_message_sender.send(msg).await.unwrap();
+        self.broadcast_hello();
 
         loop {
             select! {
@@ -89,25 +117,3 @@ impl crate::Service for ZarbSync {
     }
 }
 
-impl ZarbSync {
-    pub fn new(
-        config: Config,
-        signer: BLSSigner,
-        network: &mut dyn NetworkService,
-    ) -> Result<Self> {
-        let mut handlers: BTreeMap<PayloadType, Handler> = BTreeMap::new();
-
-        let slm = SalamHandler::new();
-
-        handlers.insert(PayloadType::Salam, Handler::new(Box::new(slm)));
-
-        Ok(Self {
-            signer,
-            firewall: Firewall::new(&config.firewall)?,
-            config,
-            handlers,
-            network_message_sender: network.message_sender(),
-            network_event_receiver: network.event_receiver(),
-        })
-    }
-}

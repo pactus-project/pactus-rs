@@ -47,7 +47,7 @@ impl Message {
         let initiator = PeerId::from_bytes(&raw.initiator_data)
             .map_err(|err| Error::DecodeError(err.to_string()))?;
         let payload: Box<dyn payload::Payload> = match raw.payload_type {
-            payload::Type::Salam => Box::new(minicbor::decode::<payload::salam::SalamPayload>(
+            payload::Type::Hello => Box::new(minicbor::decode::<payload::hello::HelloPayload>(
                 raw.payload_data.as_ref(),
             )?),
             payload::Type::Heartbeat => Box::new(minicbor::decode::<

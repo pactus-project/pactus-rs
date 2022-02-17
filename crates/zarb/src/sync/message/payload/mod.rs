@@ -1,48 +1,60 @@
-pub mod aleyk;
 pub mod heartbeat;
-pub mod salam;
+pub mod hello;
 
 pub use crate::error::Result;
 use core::fmt::Debug;
 use minicbor::{Decode, Encode};
+use std::fmt;
 
 #[derive(Debug, Decode, Encode, PartialEq, Eq, PartialOrd, Ord)]
 #[cbor(index_only)]
 pub enum Type {
     #[n(1)]
-    Salam,
+    Hello,
     #[n(2)]
-    Aleyk,
-    #[n(3)]
-    LatestBlocksRequest,
-    #[n(4)]
-    LatestBlocksResponse,
-    #[n(5)]
-    QueryTransactions,
-    #[n(6)]
-    Transactions,
-    #[n(7)]
-    QueryProposal,
-    #[n(8)]
-    Proposal,
-    #[n(9)]
     Heartbeat,
-    #[n(10)]
+    #[n(3)]
+    QueryTransactions,
+    #[n(4)]
+    Transactions,
+    #[n(5)]
+    QueryProposal,
+    #[n(6)]
+    Proposal,
+    #[n(7)]
     QueryVotes,
-    #[n(11)]
+    #[n(8)]
     Vote,
-    #[n(12)]
+    #[n(9)]
     BlockAnnounce,
     #[n(13)]
-    DownloadRequest,
+    BlockRequest,
     #[n(14)]
-    DownloadResponse,
+    BlockResponse,
 }
 
 pub trait Payload: Debug {
     fn sanity_check(&self) -> Result<()>;
     fn payload_type(&self) -> Type;
     fn to_bytes(&self) -> Result<Vec<u8>>;
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Type::Hello => write!(f, "hello"),
+            Type::Heartbeat => write!(f, "heartbeat"),
+            Type::QueryTransactions => write!(f, "querytransactions"),
+            Type::Transactions => write!(f, "transactions"),
+            Type::QueryProposal => write!(f, "queryproposal"),
+            Type::Proposal => write!(f, "proposal"),
+            Type::QueryVotes => write!(f, "queryvotes"),
+            Type::Vote => write!(f, "vote"),
+            Type::BlockAnnounce => write!(f, "blockannounce"),
+            Type::BlockRequest => write!(f, "blockrequest"),
+            Type::BlockResponse => write!(f, "blockresponse"),
+        }
+    }
 }
 
 const ResponseCodeNone: i32 = -1;

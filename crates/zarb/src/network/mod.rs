@@ -7,21 +7,14 @@ pub mod service;
 
 pub use crate::error::Result;
 use async_std::channel::{Receiver, Sender};
-use async_trait::async_trait;
-use libp2p::{
-    gossipsub::{IdentTopic, TopicHash},
-    PeerId,
-};
+use libp2p::PeerId;
 use service::ZarbNetwork;
 
 #[derive(Debug)]
 pub enum NetworkEvent {
     PeerConnected(PeerId),
     PeerDisconnected(PeerId),
-    MessageReceived {
-        source: PeerId,
-        data: Vec<u8>,
-    }
+    MessageReceived { source: PeerId, data: Vec<u8> },
 }
 
 #[derive(Debug)]
