@@ -17,7 +17,7 @@ use libp2p::{identity, PeerId};
 use log::{debug, error, info, warn};
 use std::time::Duration;
 
-pub(crate) struct ZarbNetwork {
+pub(super) struct ZarbNetwork {
     config: Config,
     swarm: Swarm<Behaviour>,
     message_receiver: Receiver<NetworkMessage>,
@@ -34,7 +34,7 @@ async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
 
 impl NetworkService for ZarbNetwork {
     fn self_id(&self) -> PeerId {
-        todo!()
+        self.swarm.local_peer_id().clone()
     }
     fn message_sender(&self) -> Sender<NetworkMessage> {
         self.message_sender.clone()
@@ -42,80 +42,6 @@ impl NetworkService for ZarbNetwork {
 
     fn event_receiver(&self) -> Receiver<NetworkEvent> {
         self.event_receiver.clone()
-    }
-}
-
-#[async_trait]
-impl crate::Service for ZarbNetwork {
-    async fn start(self) {
-        let general_topic = self.get_general_topic();
-        let consensus_topic = self.get_consensus_topic();
-        let mut swarm_stream = self.swarm.fuse();
-        let mut network_stream = self.message_receiver.fuse();
-        let mut interval = stream::interval(Duration::from_secs(10)).fuse();
-        let mut has_joined_consensus_topic = false;
-
-        // Join general topic by starting the service,
-        // We will join consensus topic later (after syncing)
-        swarm_stream
-            .get_mut()
-            .behaviour_mut()
-            .subscribe(&general_topic)
-            .expect("Unable to join general topic");
-
-        loop {
-            select! {
-                swarm_event = swarm_stream.next() => match swarm_event {
-                    Some(event) => match event {
-                        SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) => {
-                            info!("peer dialed {:?}", peer_id);
-                            emit_event(&self.event_sender, NetworkEvent::PeerConnected(peer_id)).await;
-                        }
-                        SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) => {
-                            info!("peer disconnected {:?}", peer_id);
-                            emit_event(&self.event_sender, NetworkEvent::PeerDisconnected(peer_id)).await;
-                        }
-                        SwarmEvent::Behaviour(BehaviourEventOut::MessageReceived {
-                            source,
-                            data,
-                        }) => {
-                            debug!("got a Gossip message from {:?}", source);
-                            emit_event(&self.event_sender, NetworkEvent::MessageReceived {
-                                source,  data
-                            }).await;
-                        }
-                        _ => {
-                            continue;
-                        }
-                    }
-                    None => { break; }
-                },
-                message = network_stream.next() => match message {
-                    Some(msg) => match msg {
-                        NetworkMessage::GeneralMessage{data} =>{
-                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(general_topic.clone(), data) {
-                                warn!("failed to publish message: {:?}", e);
-                            }
-                        }
-                        NetworkMessage::ConsensusMessage{data} =>{
-                            if !has_joined_consensus_topic {
-                                swarm_stream.get_mut().behaviour_mut().subscribe(&consensus_topic).expect("Unable to join consensus topic");
-                                has_joined_consensus_topic = true;
-                            }
-                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(consensus_topic.clone(), data) {
-                                warn!("failed to publish message: {:?}", e);
-                            }
-                        }
-                        NetworkMessage::StreamMessage{target, data} =>{
-                        }
-                    },
-                    None => { break; }
-                },
-                interval_event = interval.next() => if interval_event.is_some() {
-                    debug!("connected peers: {}", swarm_stream.get_mut().behaviour_mut().peers().len());
-                }
-            }
-        }
     }
 }
 
@@ -191,6 +117,83 @@ impl ZarbNetwork {
     //         .map_err(|err| Error::NetworkError(format!("{:?}", err)))
     // }
 }
+
+
+#[async_trait]
+impl crate::Service for ZarbNetwork {
+    async fn start(self) {
+        let general_topic = self.get_general_topic();
+        let consensus_topic = self.get_consensus_topic();
+        let mut swarm_stream = self.swarm.fuse();
+        let mut network_stream = self.message_receiver.fuse();
+        let mut interval = stream::interval(Duration::from_secs(10)).fuse();
+        let mut has_joined_consensus_topic = false;
+
+        // Join general topic by starting the service,
+        // We will join consensus topic later (after syncing)
+        swarm_stream
+            .get_mut()
+            .behaviour_mut()
+            .subscribe(&general_topic)
+            .expect("Unable to join general topic");
+
+        loop {
+            select! {
+                swarm_event = swarm_stream.next() => match swarm_event {
+                    Some(event) => match event {
+                        SwarmEvent::Behaviour(BehaviourEventOut::PeerConnected(peer_id)) => {
+                            info!("peer dialed {:?}", peer_id);
+                            emit_event(&self.event_sender, NetworkEvent::PeerConnected(peer_id)).await;
+                        }
+                        SwarmEvent::Behaviour(BehaviourEventOut::PeerDisconnected(peer_id)) => {
+                            info!("peer disconnected {:?}", peer_id);
+                            emit_event(&self.event_sender, NetworkEvent::PeerDisconnected(peer_id)).await;
+                        }
+                        SwarmEvent::Behaviour(BehaviourEventOut::MessageReceived {
+                            source,
+                            data,
+                        }) => {
+                            debug!("got a Gossip message from {:?}", source);
+                            emit_event(&self.event_sender, NetworkEvent::MessageReceived {
+                                source,  data
+                            }).await;
+                        }
+                        _ => {
+                            continue;
+                        }
+                    }
+                    None => { break; }
+                },
+                message = network_stream.next() => match message {
+                    Some(msg) => match msg {
+                        NetworkMessage::GeneralMessage{data} =>{
+                            info!("{}", hex::encode(&data));
+                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(general_topic.clone(), data) {
+                                warn!("failed to publish message: {:?}", e);
+                            }
+                        }
+                        NetworkMessage::ConsensusMessage{data} =>{
+                            if !has_joined_consensus_topic {
+                                swarm_stream.get_mut().behaviour_mut().subscribe(&consensus_topic).expect("Unable to join consensus topic");
+                                has_joined_consensus_topic = true;
+                            }
+                            if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(consensus_topic.clone(), data) {
+                                warn!("failed to publish message: {:?}", e);
+                            }
+                        }
+                        NetworkMessage::StreamMessage{target, data} =>{
+                        }
+                    },
+                    None => { break; }
+                },
+                interval_event = interval.next() => if interval_event.is_some() {
+                    debug!("connected peers: {}", swarm_stream.get_mut().behaviour_mut().peers().len());
+                }
+            }
+        }
+    }
+}
+
 
 #[cfg(test)]
 #[path = "./service_test.rs"]

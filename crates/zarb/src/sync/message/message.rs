@@ -1,4 +1,4 @@
-use super::payload;
+use super::payload::*;
 use crate::error::{Error, Result};
 use libp2p::PeerId;
 use minicbor::{bytes::ByteVec, Decode, Encode};
@@ -7,7 +7,7 @@ use std::vec::Vec;
 #[derive(Debug)]
 pub struct Message {
     pub initiator: PeerId,
-    pub payload: Box<dyn payload::Payload>,
+    pub payload: Box<dyn Payload>,
 }
 
 #[derive(Encode, Decode)]
@@ -20,13 +20,13 @@ pub struct RawMessage {
     #[n(3)]
     pub initiator_data: ByteVec,
     #[n(4)]
-    pub payload_type: payload::Type,
+    pub payload_type: Type,
     #[n(5)]
     pub payload_data: ByteVec,
 }
 
 impl Message {
-    pub fn new(initiator: PeerId, payload: Box<dyn payload::Payload>) -> Result<Self> {
+    pub fn new(initiator: PeerId, payload: Box<dyn Payload>) -> Result<Self> {
         Ok(Self { initiator, payload })
     }
 
@@ -34,19 +34,19 @@ impl Message {
         let raw: RawMessage = minicbor::decode(data)?;
         let initiator = PeerId::from_bytes(&raw.initiator_data)
             .map_err(|err| Error::DecodeError(err.to_string()))?;
-        let payload: Box<dyn payload::Payload> = match raw.payload_type {
-            payload::Type::Salam => Box::new(minicbor::decode::<payload::salam::SalamPayload>(
+        let pld: Box<dyn Payload> = match raw.payload_type {
+            Type::Hello => Box::new(minicbor::decode::<hello::HelloPayload>(
                 raw.payload_data.as_ref(),
             )?),
-            payload::Type::Heartbeat => Box::new(minicbor::decode::<
-                payload::heartbeat::HeartbeatPayload,
-            >(raw.payload_data.as_ref())?),
+            Type::Heartbeat => Box::new(minicbor::decode::<heartbeat::HeartbeatPayload>(
+                raw.payload_data.as_ref(),
+            )?),
             _ => {
                 todo!()
             }
         };
 
-        Self::new(initiator, payload)
+        Self::new(initiator, pld)
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
@@ -61,6 +61,14 @@ impl Message {
         };
 
         Ok(minicbor::to_vec(raw)?)
+    }
+
+    pub fn sanity_check(&self) -> Result<()> {
+        self.payload.sanity_check()
+    }
+
+    pub fn payload_type(&self) -> Type {
+        self.payload.payload_type()
     }
 }
 

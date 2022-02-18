@@ -9,3 +9,8 @@ pub mod sync;
 pub trait Service {
     async fn start(self);
 }
+
+
+pub fn agent() -> String {
+    format!("zarb-rs/{}", env!("CARGO_PKG_VERSION"))
+}

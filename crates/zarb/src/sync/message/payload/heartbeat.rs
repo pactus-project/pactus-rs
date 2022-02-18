@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use super::Payload;
 use crate::error::{Error, Result};
 use minicbor::{Decode, Encode};
@@ -39,5 +41,9 @@ impl Payload for HeartbeatPayload {
 
     fn to_bytes(&self) -> Result<Vec<u8>> {
         Ok(minicbor::to_vec(self)?)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
