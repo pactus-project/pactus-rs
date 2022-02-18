@@ -1,15 +1,19 @@
-use super::{message::payload::Payload, service::ZarbSync};
+use std::any::Any;
+
+use super::{
+    message::{message::Message, payload::Payload},
+    service::ZarbSync,
+};
 use crate::error::Result;
 use minicbor::Decode;
 
-pub mod hello;
 pub mod heartbeat;
+pub mod hello;
 
 pub(super) trait HandlerStrategy: Send {
-    fn pars_payload(&self, data: &[u8], sync: &ZarbSync) -> Result<()>;
-
+    fn pars_payload(&self, pld: Box<dyn Payload>, sync: &ZarbSync) -> Result<()>;
+    fn prepare_message(&self, pld: Box<dyn Payload>, sync: &ZarbSync) -> Result<Message>;
 }
-
 
 pub(super) struct Handler {
     strategy: Box<dyn HandlerStrategy>,
@@ -20,11 +24,15 @@ impl Handler {
         Self { strategy }
     }
 
-    pub fn do_pars_payload(&self, data: &[u8], sync: &ZarbSync) {
-        self.strategy.pars_payload(data, sync).unwrap();
+    pub fn do_pars_payload(&self, pld: Box<dyn Payload>, sync: &ZarbSync) {
+        self.strategy.pars_payload(pld, sync).unwrap();
+    }
+
+    pub fn do_prepare_message(&self, pld: Box<dyn Payload>, sync: &ZarbSync) -> Result<Message> {
+        pld.sanity_check()?;
+        self.strategy.prepare_message(pld, sync)
     }
 }
-
 
 fn decode_payload<T>(data: &[u8]) -> Result<T>
 where

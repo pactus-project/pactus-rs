@@ -1,5 +1,6 @@
 use super::handler::hello::HelloHandler;
 use super::handler::Handler;
+use super::message::message::Message;
 use super::message::payload::hello::HelloPayload;
 use super::message::payload::{Payload, Type as PayloadType};
 use super::SyncService;
@@ -23,8 +24,8 @@ use zarb_types::hash::Hash32;
 use libp2p::{identity, PeerId};
 
 pub(super) struct ZarbSync {
-    config: Config,
-    self_id: PeerId,
+    pub config: Config,
+    pub self_id: PeerId,
     signer: BLSSigner,
     firewall: Firewall,
     handlers: BTreeMap<PayloadType, Handler>,
@@ -57,7 +58,7 @@ impl ZarbSync {
         })
     }
 
-    fn broadcast_hello(&self) {
+    fn say_hello(&self) {
         let pld = HelloPayload::new(
             self.self_id,
             self.config.moniker.clone(),
@@ -65,10 +66,20 @@ impl ZarbSync {
             0,
             Hash32::calculate("zarb".as_bytes()),
         );
-        let msg = NetworkMessage::GeneralMessage {
-            data: pld.to_bytes().unwrap(),
+        self.broadcast(Box::new(pld));
+    }
+
+    fn broadcast(&self, pld : Box<dyn Payload>) {
+        let msg  = self.prepare_message(pld).unwrap();
+        let msg_data = NetworkMessage::GeneralMessage {
+            data: msg.to_bytes().unwrap(),
         };
-        self.network_message_sender.try_send(msg).unwrap();
+        self.network_message_sender.try_send(msg_data).unwrap();
+    }
+
+    fn prepare_message(&self, pld: Box<dyn Payload>) -> Result<Message> {
+        let handler =  self.handlers.get(&pld.payload_type()).unwrap();
+        handler.do_prepare_message(pld, self)
     }
 }
 
@@ -78,7 +89,7 @@ impl crate::Service for ZarbSync {
         let mut heartbeat_ticker = stream::interval(self.config.heartbeat_timeout).fuse();
         let mut network_stream = self.network_event_receiver.clone().fuse();
 
-        self.broadcast_hello();
+        self.say_hello();
 
         loop {
             select! {
@@ -93,12 +104,12 @@ impl crate::Service for ZarbSync {
                         NetworkEvent::MessageReceived{source, data} =>{
                             match self.firewall.open_message(&data) {
                                 Ok(msg) => {
-                                    match self.handlers.get(&msg.payload_type) {
+                                    match self.handlers.get(&msg.payload_type()) {
                                         Some(handler) => {
-                                            handler.do_pars_payload(msg.payload_data.as_ref(), &self);
+                                            handler.do_pars_payload(msg.payload, &self);
                                         }
                                         None => {
-                                            error!("invalid payload type: {:?}", msg.payload_type)
+                                            error!("invalid payload type: {:?}", msg.payload_type())
                                         }
                                     }
                                 }

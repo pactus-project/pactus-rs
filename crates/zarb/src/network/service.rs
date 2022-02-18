@@ -167,6 +167,7 @@ impl crate::Service for ZarbNetwork {
                 message = network_stream.next() => match message {
                     Some(msg) => match msg {
                         NetworkMessage::GeneralMessage{data} =>{
+                            info!("{}", hex::encode(&data));
                             if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(general_topic.clone(), data) {
                                 warn!("failed to publish message: {:?}", e);
                             }

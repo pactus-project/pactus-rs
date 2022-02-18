@@ -13,10 +13,10 @@ impl HeartbeatHandler {
     }
 }
 
-impl HandlerStrategy for HeartbeatHandler {
+// impl HandlerStrategy for HeartbeatHandler {
 
-    fn pars_payload(&self, data: &[u8], sync: &ZarbSync) -> Result<()> {
-        let pld = super::decode_payload::<HeartbeatPayload>(data)?;
-        todo!()
-    }
-}
+//     fn pars_payload(&self, data: &[u8], sync: &ZarbSync) -> Result<()> {
+//         let pld = super::decode_payload::<HeartbeatPayload>(data)?;
+//         todo!()
+//     }
+// }

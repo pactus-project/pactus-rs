@@ -4,7 +4,7 @@ pub mod hello;
 pub use crate::error::Result;
 use core::fmt::Debug;
 use minicbor::{Decode, Encode};
-use std::fmt;
+use std::{any::Any, fmt};
 
 #[derive(Debug, Decode, Encode, PartialEq, Eq, PartialOrd, Ord)]
 #[cbor(index_only)]
@@ -37,6 +37,8 @@ pub trait Payload: Debug {
     fn sanity_check(&self) -> Result<()>;
     fn payload_type(&self) -> Type;
     fn to_bytes(&self) -> Result<Vec<u8>>;
+
+    fn as_any(&self) -> &dyn Any;
 }
 
 impl fmt::Display for Type {

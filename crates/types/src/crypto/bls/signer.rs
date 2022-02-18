@@ -44,7 +44,7 @@ impl Signer for BLSSigner {
     fn sign(&self, s: &dyn Signable) {
         let sb = s.sign_bytes();
         let sig = self.secret.sign(&sb);
-        s.set_signature(&sig);
-        s.set_public_key(&self.public.clone());
+        // s.set_signature(&sig);
+        // s.set_public_key(&self.public.clone());
     }
 }

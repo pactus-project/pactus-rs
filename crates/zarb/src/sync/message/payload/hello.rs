@@ -1,9 +1,13 @@
+use std::any::Any;
+
 use super::Payload;
 use crate::error::{Error, Result};
 use minicbor::{Decode, Encode};
 use zarb_types::crypto::bls::public_key;
 use zarb_types::crypto::bls::signature::BLSSignature;
 use zarb_types::crypto::public_key::PublicKey;
+use zarb_types::crypto::signature::Signature;
+use zarb_types::crypto::signer::Signable;
 use zarb_types::{crypto::bls::public_key::BLSPublicKey, hash::Hash32};
 use libp2p::PeerId;
 
@@ -45,15 +49,11 @@ impl HelloPayload {
     pub fn peer_id(&self) -> PeerId {
         PeerId::from_bytes(&self.peer_id_data).unwrap()
     }
-
-    fn sign_bytes(&self) -> Vec<u8> {
-        format!("{}:{}:{}", self.payload_type(), self.agent, self.peer_id()).into_bytes()
-    }
 }
 
 impl Payload for HelloPayload {
     fn sanity_check(&self) -> super::Result<()> {
-        if self.height <= 0 {
+        if self.height < 0 {
             return Err(Error::InvalidMessage(format!(
                 "invalid height: {}",
                 self.height
@@ -83,5 +83,19 @@ impl Payload for HelloPayload {
         Ok(minicbor::to_vec(self)?)
     }
 
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
 
+impl Signable for HelloPayload {
+    fn sign_bytes(&self) -> Vec<u8> {
+        format!("{}:{}:{}", self.payload_type(), self.agent, self.peer_id()).into_bytes()
+    }
+    // fn set_public_key(&self, pk: &dyn PublicKey) {
+    //     self.public_key = Some(pk)
+    // }
+    // fn set_signature(&self, sig: &dyn Signature) {
+    //     self.signature = Some(sig)
+    // }
 }
