@@ -1,13 +1,43 @@
+use super::{bls, signature::Signature, KeyPairType};
 use crate::{address::Address, error::Result};
 use blake2b_simd::Params;
 use ripemd::{Digest, Ripemd160};
-use std::fmt::Debug;
 
-pub trait PublicKey: Debug {
-    fn to_bytes(&self) -> Vec<u8>;
-    fn sanity_check(&self) -> Result<()>;
+/// The public key
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PublicKey {
+    /// A BLS Public key.
+    BLS(bls::public_key::PublicKey),
+}
 
-    fn address(&self) -> Address {
+impl PublicKey {
+    pub fn from_bytes(key_type: super::KeyPairType, data: &[u8]) -> Result<Self> {
+        Ok(match key_type {
+            KeyPairType::KeyPairBLS => PublicKey::BLS(bls::public_key::PublicKey::from_bytes(data)?),
+        })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        match self {
+            PublicKey::BLS(pk) => pk.to_bytes(),
+        }
+    }
+    pub fn verify(&self, sig: &Signature, msg: &[u8]) -> bool {
+        match self {
+            PublicKey::BLS(pk) => match sig {
+                Signature::BLS(sig) => pk.verify(sig, msg),
+                _ => false,
+            },
+        }
+    }
+
+    pub fn  sanity_check(&self) -> Result<()> {
+        match self {
+            PublicKey::BLS(pk) => pk.sanity_check(),
+        }
+    }
+
+    pub fn address(&self) -> Address {
         let digest256 = Params::new()
             .hash_length(32)
             .to_state()

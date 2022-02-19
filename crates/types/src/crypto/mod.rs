@@ -1,7 +1,6 @@
 pub mod bls;
 pub mod public_key;
 pub mod secret_key;
-pub mod signatory;
 pub mod signature;
 pub mod signer;
 
@@ -45,3 +44,6 @@ macro_rules! impl_common {
 }
 
 pub(super) use impl_common;
+pub enum KeyPairType {
+    KeyPairBLS
+}

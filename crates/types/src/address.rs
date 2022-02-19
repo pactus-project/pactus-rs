@@ -2,6 +2,8 @@ use crate::error::{Error, Result};
 
 const ADDRESS_SIZE: usize = 21;
 
+
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Address([u8; ADDRESS_SIZE]);
 

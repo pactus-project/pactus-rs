@@ -1,4 +1,3 @@
-use crate::crypto::signature::Signature;
 use crate::error::{Error, Result};
 use bls12_381_plus::{ExpandMsgXmd, G1Affine, G1Projective};
 use group::Curve;
@@ -6,15 +5,10 @@ use group::Curve;
 const SIGNATURE_KEY_SIZE: usize = 48;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BLSSignature(pub(super) G1Projective);
+pub struct Signature(pub(super) G1Projective);
 
-impl Signature for BLSSignature {
-    fn to_bytes(&self) -> Vec<u8> {
-        BLSSignature::to_fixed_bytes(self).to_vec()
-    }
-}
 
-impl BLSSignature {
+impl Signature {
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
         let bytes: &[u8; SIGNATURE_KEY_SIZE] =
             data.try_into().map_err(|_| Error::InvalidLength {
@@ -29,6 +23,14 @@ impl BLSSignature {
         self.0.to_affine().to_compressed()
     }
 
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.to_fixed_bytes().to_vec()
+    }
+
+    pub fn sanity_check(&self) -> Result<()> {
+        Ok(())
+    }
+
     /// The domain separation tag
     const DST: &'static [u8] = b"BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_POP_";
 
@@ -37,4 +39,4 @@ impl BLSSignature {
     }
 }
 
-crate::crypto::impl_common!(BLSSignature);
+super::impl_common!(Signature);
