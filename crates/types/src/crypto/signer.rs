@@ -3,8 +3,8 @@ use crate::address::Address;
 
 pub trait Signable {
     fn sign_bytes(&self) -> Vec<u8>;
-    fn set_public_key(&self, pk: PublicKey);
-    fn set_signature(&self, sig: Signature);
+    fn set_public_key(&mut self, pk: PublicKey);
+    fn set_signature(&mut self, sig: Signature);
 }
 
 
@@ -33,10 +33,10 @@ impl Signer {
         self.address.clone()
     }
 
-    fn sign(&self, s: &dyn Signable) {
-        let sb = s.sign_bytes();
+    pub fn sign(&self, signable: &mut dyn Signable) {
+        let sb = signable.sign_bytes();
         let sig = self.secret.sign(&sb);
-        s.set_signature(sig);
-        s.set_public_key(self.public.clone());
+        signable.set_signature(sig);
+        signable.set_public_key(self.public.clone());
     }
 }

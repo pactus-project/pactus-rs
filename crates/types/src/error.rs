@@ -9,12 +9,6 @@ pub enum Error {
     EncodeError(String),
     #[error("Invalid data length")]
     InvalidLength { expected: usize, found: usize },
-    #[error("Invalid signature")]
-    InvalidSignature,
-    #[error("Invalid public key")]
-    InvalidPublicKey,
-    #[error("Invalid secret key")]
-    InvalidSecretKey,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

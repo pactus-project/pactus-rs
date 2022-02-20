@@ -45,6 +45,8 @@ impl PublicKey {
         .is_identity()
         .into()
     }
+
+    super::impl_common!();
 }
 
-super::impl_common!(PublicKey);
+

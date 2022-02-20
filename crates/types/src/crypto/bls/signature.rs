@@ -37,6 +37,8 @@ impl Signature {
     pub(super) fn hash_msg(msg: &[u8]) -> G1Projective {
         G1Projective::hash::<ExpandMsgXmd<sha2::Sha256>>(msg, Self::DST)
     }
+
+    super::impl_common!();
 }
 
-super::impl_common!(Signature);
+

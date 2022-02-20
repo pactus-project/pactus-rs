@@ -3,14 +3,12 @@ use super::signature::Signature;
 use crate::error::{Error, Result};
 use bls12_381_plus::{G2Projective, Scalar};
 use group::ff::Field;
-use group::Group;
 use rand::rngs::OsRng;
 
 const SECRET_KEY_SIZE: usize = 32;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecretKey(pub(super) Scalar);
-
 
 impl SecretKey {
     pub fn random() -> Self {
@@ -56,14 +54,13 @@ impl SecretKey {
         Signature(g1 * self.0)
     }
 
+    super::impl_common!();
 }
 
-super::impl_common!(SecretKey);
+
 
 #[cfg(test)]
 mod tests {
-    use crate::crypto::secret_key::SecretKey;
-
     #[test]
     fn test_decoding() {
         let sec_hex = "68dcbf868133d3dbb4d12a0c2907c9b093dfefef6d3855acb6602ede60a5c6d0";
@@ -71,9 +68,9 @@ mod tests {
         let sig_hex = "a2d06b33af2c9e7ca878da85a96b2c2346f4306d0473bdabc38be87c19dae5e67e08724a5220d0e372fb080bbd2fbde9";
         let msg = "zarb".as_bytes();
 
-        let sec_key = super::SecretKey::from_bytes(sec_buf.as_slice()).unwrap();
-        let pub_key = super::PublicKey::from_bytes(pub_buf.as_slice()).unwrap();
-        let sig = super::Signature::from_bytes(sig_buf.as_slice()).unwrap();
+        let sec = super::SecretKey::from_string(sec_hex).unwrap();
+        let pk = super::PublicKey::from_string(pk_hex).unwrap();
+        let sig = super::Signature::from_string(sig_hex).unwrap();
 
         assert_eq!(sec.public_key(), pk);
         assert_eq!(sec.sign(msg), sig);

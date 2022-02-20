@@ -29,8 +29,9 @@ impl Handler {
     }
 
     pub fn do_prepare_message(&self, pld: Box<dyn Payload>, sync: &ZarbSync) -> Result<Message> {
-        pld.sanity_check()?;
-        self.strategy.prepare_message(pld, sync)
+        let msg = self.strategy.prepare_message(pld, sync)?;
+        msg.sanity_check()?;
+        Ok(msg)
     }
 }
 

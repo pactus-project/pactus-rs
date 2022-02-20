@@ -1,5 +1,5 @@
-use super::bls;
-use crate::error::{Error, Result};
+use super::{bls, KeyPairType};
+use crate::error::Result;
 
 /// The secret key
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -9,9 +9,9 @@ pub enum Signature {
 }
 
 impl Signature {
-    pub fn from_bytes(key_type: super::KeyPairType, data: &[u8]) -> Result<Self> {
+    pub fn from_bytes(key_type: KeyPairType, data: &[u8]) -> Result<Self> {
         Ok(match key_type {
-            BLS => Signature::BLS(bls::signature::Signature::from_bytes(data)?),
+            KeyPairType::KeyPairBLS => Signature::BLS(bls::signature::Signature::from_bytes(data)?),
         })
     }
 
@@ -25,4 +25,7 @@ impl Signature {
             Signature::BLS(sig) => sig.sanity_check(),
         }
     }
+
+    super::impl_common!();
 }
+

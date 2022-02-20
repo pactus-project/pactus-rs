@@ -11,7 +11,7 @@ pub enum PublicKey {
 }
 
 impl PublicKey {
-    pub fn from_bytes(key_type: super::KeyPairType, data: &[u8]) -> Result<Self> {
+    pub fn from_bytes(key_type: KeyPairType, data: &[u8]) -> Result<Self> {
         Ok(match key_type {
             KeyPairType::KeyPairBLS => PublicKey::BLS(bls::public_key::PublicKey::from_bytes(data)?),
         })
@@ -26,7 +26,6 @@ impl PublicKey {
         match self {
             PublicKey::BLS(pk) => match sig {
                 Signature::BLS(sig) => pk.verify(sig, msg),
-                _ => false,
             },
         }
     }
@@ -51,4 +50,7 @@ impl PublicKey {
         data.insert(0, 1);
         Address::from_bytes(&data).unwrap()
     }
+
+    super::impl_common!();
 }
+
