@@ -1,10 +1,8 @@
-use std::any::Any;
-
-use super::Payload;
+use super::Message;
 use crate::error::{Error, Result};
 use libp2p::PeerId;
-use minicbor::{Decode, Encode};
-use zarb_types::crypto::bls::public_key;
+use minicbor::{bytes::ByteVec, Decode, Encode};
+use std::any::Any;
 use zarb_types::crypto::public_key::PublicKey;
 use zarb_types::crypto::signature::Signature;
 use zarb_types::crypto::signer::Signable;
@@ -13,17 +11,17 @@ use zarb_types::hash::Hash32;
 
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]
-pub struct HelloPayload {
-    #[cbor(n(1), with = "minicbor::bytes")]
-    pub peer_id_data: Vec<u8>,
+pub struct HelloMessage {
+    #[n(1)]
+    pub peer_id_data: ByteVec,
     #[n(2)]
     pub agent: String,
     #[n(3)]
     pub moniker: String,
-    #[cbor(n(4), with = "minicbor::bytes")]
-    pub public_key_data: Vec<u8>,
-    #[cbor(n(5), with = "minicbor::bytes")]
-    pub signature_data: Vec<u8>,
+    #[n(4)]
+    pub public_key_data: ByteVec,
+    #[n(5)]
+    pub signature_data: ByteVec,
     #[n(6)]
     pub height: i32,
     #[n(7)]
@@ -32,7 +30,7 @@ pub struct HelloPayload {
     pub genesis_hash: Hash32,
 }
 
-impl HelloPayload {
+impl HelloMessage {
     pub fn new(
         peer_id: PeerId,
         moniker: String,
@@ -40,11 +38,11 @@ impl HelloPayload {
         flags: u32,
         genesis_hash: Hash32,
     ) -> Self {
-        HelloPayload {
-            peer_id_data: peer_id.to_bytes(),
+        HelloMessage {
+            peer_id_data: ByteVec::from(peer_id.to_bytes()),
             agent: crate::agent(),
-            public_key_data: Vec::new(),
-            signature_data: Vec::new(),
+            public_key_data: ByteVec::from(Vec::new()),
+            signature_data: ByteVec::from(Vec::new()),
             moniker,
             height,
             flags,
@@ -67,7 +65,7 @@ impl HelloPayload {
     }
 }
 
-impl Payload for HelloPayload {
+impl Message for HelloMessage {
     fn sanity_check(&self) -> super::Result<()> {
         if self.height < 0 {
             return Err(Error::InvalidMessage(format!(
@@ -85,7 +83,7 @@ impl Payload for HelloPayload {
         Ok(())
     }
 
-    fn payload_type(&self) -> super::Type {
+    fn message_type(&self) -> super::Type {
         super::Type::Hello
     }
 
@@ -102,14 +100,14 @@ impl Payload for HelloPayload {
     }
 }
 
-impl Signable for HelloPayload {
+impl Signable for HelloMessage {
     fn sign_bytes(&self) -> Vec<u8> {
-        format!("{}:{}:{}", self.payload_type(), self.agent, self.peer_id()).into_bytes()
+        format!("{}:{}:{}", self.message_type(), self.agent, self.peer_id()).into_bytes()
     }
     fn set_public_key(&mut self, pk: PublicKey) {
-        self.public_key_data = pk.to_bytes()
+        self.public_key_data = ByteVec::from(pk.to_bytes())
     }
     fn set_signature(&mut self, sig: Signature) {
-        self.signature_data = sig.to_bytes()
+        self.signature_data = ByteVec::from(sig.to_bytes())
     }
 }

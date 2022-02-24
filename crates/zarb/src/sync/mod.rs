@@ -1,7 +1,7 @@
 pub mod config;
 pub mod firewall;
 pub mod handler;
-pub mod message;
+pub mod bundle;
 pub mod service;
 
 use zarb_types::crypto::signer::Signer;

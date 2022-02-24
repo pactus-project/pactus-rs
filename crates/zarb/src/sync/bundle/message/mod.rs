@@ -33,9 +33,9 @@ pub enum Type {
     BlockResponse,
 }
 
-pub trait Payload: Debug {
+pub trait Message: Debug {
     fn sanity_check(&self) -> Result<()>;
-    fn payload_type(&self) -> Type;
+    fn message_type(&self) -> Type;
     fn to_bytes(&self) -> Result<Vec<u8>>;
 
     fn as_any(&self) -> &dyn Any;
@@ -47,15 +47,15 @@ impl fmt::Display for Type {
         match self {
             Type::Hello => write!(f, "hello"),
             Type::Heartbeat => write!(f, "heartbeat"),
-            Type::QueryTransactions => write!(f, "querytransactions"),
+            Type::QueryTransactions => write!(f, "query transactions"),
             Type::Transactions => write!(f, "transactions"),
-            Type::QueryProposal => write!(f, "queryproposal"),
+            Type::QueryProposal => write!(f, "query proposal"),
             Type::Proposal => write!(f, "proposal"),
-            Type::QueryVotes => write!(f, "queryvotes"),
+            Type::QueryVotes => write!(f, "query votes"),
             Type::Vote => write!(f, "vote"),
-            Type::BlockAnnounce => write!(f, "blockannounce"),
-            Type::BlockRequest => write!(f, "blockrequest"),
-            Type::BlockResponse => write!(f, "blockresponse"),
+            Type::BlockAnnounce => write!(f, "block announce"),
+            Type::BlockRequest => write!(f, "block request"),
+            Type::BlockResponse => write!(f, "block response"),
         }
     }
 }
