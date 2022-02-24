@@ -1,38 +1,16 @@
-use super::public_key::BLSPublicKey;
-use super::signature::BLSSignature;
-use crate::crypto::public_key::PublicKey;
-use crate::crypto::secret_key::SecretKey;
-use crate::crypto::signature::Signature;
+use super::public_key::PublicKey;
+use super::signature::Signature;
 use crate::error::{Error, Result};
 use bls12_381_plus::{G2Projective, Scalar};
 use group::ff::Field;
-use group::Group;
 use rand::rngs::OsRng;
 
 const SECRET_KEY_SIZE: usize = 32;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BLSSecretKey(pub(super) Scalar);
+pub struct SecretKey(pub(super) Scalar);
 
-impl SecretKey for BLSSecretKey {
-    type PublicKey = super::public_key::BLSPublicKey;
-    type Signature = super::signature::BLSSignature;
-
-    fn public_key(&self) -> Self::PublicKey {
-        BLSPublicKey(G2Projective::generator() * self.0)
-    }
-
-    fn sign(&self, msg: &[u8]) -> Self::Signature {
-        let g1 = BLSSignature::hash_msg(msg);
-        BLSSignature(g1 * self.0)
-    }
-
-    fn to_bytes(&self) -> Vec<u8> {
-        Self::to_fixed_bytes(self).to_vec()
-    }
-}
-
-impl BLSSecretKey {
+impl SecretKey {
     pub fn random() -> Self {
         let rng = &mut OsRng::default();
         Self(Scalar::random(rng))
@@ -58,14 +36,31 @@ impl BLSSecretKey {
         data.reverse();
         data
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.to_fixed_bytes().to_vec()
+    }
+
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey(G2Projective::generator() * self.0)
+    }
+
+    pub fn sanity_check(&self) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn sign(&self, msg: &[u8]) -> Signature {
+        let g1 = Signature::hash_msg(msg);
+        Signature(g1 * self.0)
+    }
+
+    super::impl_common!();
 }
 
-crate::crypto::impl_common!(BLSSecretKey);
+
 
 #[cfg(test)]
 mod tests {
-    use crate::crypto::secret_key::SecretKey;
-
     #[test]
     fn test_decoding() {
         let sec_hex = "68dcbf868133d3dbb4d12a0c2907c9b093dfefef6d3855acb6602ede60a5c6d0";
@@ -73,9 +68,9 @@ mod tests {
         let sig_hex = "a2d06b33af2c9e7ca878da85a96b2c2346f4306d0473bdabc38be87c19dae5e67e08724a5220d0e372fb080bbd2fbde9";
         let msg = "zarb".as_bytes();
 
-        let sec = super::BLSSecretKey::from_string(sec_hex).unwrap();
-        let pk = super::BLSPublicKey::from_string(pk_hex).unwrap();
-        let sig = super::BLSSignature::from_string(sig_hex).unwrap();
+        let sec = super::SecretKey::from_string(sec_hex).unwrap();
+        let pk = super::PublicKey::from_string(pk_hex).unwrap();
+        let sig = super::Signature::from_string(sig_hex).unwrap();
 
         assert_eq!(sec.public_key(), pk);
         assert_eq!(sec.sign(msg), sig);

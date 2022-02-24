@@ -1,11 +1,11 @@
-use crate::crypto::bls::public_key::BLSPublicKey;
-use minicbor::{Decode, Encode};
+use crate::crypto::bls::public_key::PublicKey;
+use minicbor::{Decode, Encode, bytes::ByteVec};
 
 #[derive(Encode, Decode)]
 #[cbor(map)]
 pub struct Validator {
     #[n(1)]
-    public_key: BLSPublicKey,
+    public_key_data: ByteVec,
     #[n(2)]
     number: i32,
     #[n(3)]

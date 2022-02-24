@@ -3,8 +3,7 @@ use std::any::Any;
 use super::Payload;
 use crate::error::{Error, Result};
 use minicbor::{Decode, Encode};
-use zarb_types::crypto::public_key::PublicKey;
-use zarb_types::{crypto::bls::public_key::BLSPublicKey, hash::Hash32};
+use zarb_types::hash::Hash32;
 
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]
@@ -44,6 +43,10 @@ impl Payload for HeartbeatPayload {
     }
 
     fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
 }

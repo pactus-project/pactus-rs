@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use zarb::config::Config;
-use zarb_types::crypto::bls::secret_key::BLSSecretKey;
+use zarb_types::crypto::bls::secret_key::SecretKey;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "init", about = "Initializing the working directory")]
@@ -21,7 +21,7 @@ pub struct InitCmd {
 impl InitCmd {
     /// Run the command
     pub fn execute(&self) -> Result<()> {
-        let sec = BLSSecretKey::random();
+        let sec = SecretKey::random();
         let node_config = Config::default();
 
         let mut dir = self.working_dir.clone();

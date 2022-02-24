@@ -16,17 +16,17 @@ use futures_util::stream::StreamExt;
 use log::{debug, error, info, trace, warn};
 use zarb_types::crypto::public_key::PublicKey;
 use zarb_types::crypto::signer::Signer;
+use zarb_types::crypto::signer::Signable;
 use std::collections::BTreeMap;
 use std::thread::sleep;
 use std::time::Duration;
-use zarb_types::crypto::bls::signer::BLSSigner;
 use zarb_types::hash::Hash32;
 use libp2p::{identity, PeerId};
 
 pub(super) struct ZarbSync {
     pub config: Config,
     pub self_id: PeerId,
-    signer: BLSSigner,
+    pub signer: Signer,
     firewall: Firewall,
     handlers: BTreeMap<PayloadType, Handler>,
     network_message_sender: Sender<NetworkMessage>,
@@ -38,7 +38,7 @@ impl SyncService for ZarbSync {}
 impl ZarbSync {
     pub fn new(
         config: Config,
-        signer: BLSSigner,
+        signer: Signer,
         network: &mut dyn NetworkService,
     ) -> Result<Self> {
         let mut handlers: BTreeMap<PayloadType, Handler> = BTreeMap::new();
@@ -59,12 +59,13 @@ impl ZarbSync {
     }
 
     fn say_hello(&self) {
+        let h = hex::decode("073ba9d1300acd7c48d4c219953466b5c15f7087e9b0957a8e2381e9f9573e09").unwrap();
         let pld = HelloPayload::new(
             self.self_id,
             self.config.moniker.clone(),
             0,
             0,
-            Hash32::calculate("zarb".as_bytes()),
+            Hash32::from_bytes(&h).unwrap(),
         );
         self.broadcast(Box::new(pld));
     }

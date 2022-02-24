@@ -1,27 +1,17 @@
-use super::signature::BLSSignature;
-use crate::address::Address;
-use crate::crypto::public_key::PublicKey;
 use crate::error::{Error, Result};
 use bls12_381_plus::{multi_miller_loop, G2Affine, G2Prepared, G2Projective};
 use group::{Curve, Group};
 use std::ops::Neg;
 
+use super::signature::Signature;
+
 const PUBLIC_KEY_SIZE: usize = 96;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BLSPublicKey(pub(super) G2Projective);
+pub struct PublicKey(pub(super) G2Projective);
 
-impl PublicKey for BLSPublicKey {
-    fn to_bytes(&self) -> Vec<u8> {
-        BLSPublicKey::to_fixed_bytes(self).to_vec()
-    }
 
-    fn sanity_check(&self) -> Result<()> {
-        Ok(())
-    }
-}
-
-impl BLSPublicKey {
+impl PublicKey {
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
         let bytes: &[u8; PUBLIC_KEY_SIZE] = data.try_into().map_err(|_| Error::InvalidLength {
             expected: PUBLIC_KEY_SIZE,
@@ -35,8 +25,16 @@ impl BLSPublicKey {
         self.0.to_affine().to_compressed()
     }
 
-    pub fn verify(&self, sig: &BLSSignature, msg: &[u8]) -> bool {
-        let hash = BLSSignature::hash_msg(msg);
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.to_fixed_bytes().to_vec()
+    }
+
+    pub fn sanity_check(&self) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn verify(&self, sig: &Signature, msg: &[u8]) -> bool {
+        let hash = Signature::hash_msg(msg);
         let g2 = G2Affine::generator().neg();
 
         multi_miller_loop(&[
@@ -47,6 +45,8 @@ impl BLSPublicKey {
         .is_identity()
         .into()
     }
+
+    super::impl_common!();
 }
 
-crate::crypto::impl_common!(BLSPublicKey);
+
