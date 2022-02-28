@@ -119,13 +119,13 @@ impl Behaviour {
 
         let identify = Identify::new(IdentifyConfig::new("zarb/v1".into(), local_key.public()));
 
-        let mut gs_config_builder = GossipsubConfigBuilder::default();
+        let gs_config_builder = GossipsubConfigBuilder::default();
         // gs_config_builder.message_id_fn(|msg: &GossipsubMessage| {
         //     let s = blake2b_256(&msg.data);
         //     MessageId::from(s)
         // });
         let gossipsub_config = gs_config_builder.build().unwrap();
-        let mut gossipsub = Gossipsub::new(
+        let gossipsub = Gossipsub::new(
             MessageAuthenticity::Signed(local_key.clone()),
             gossipsub_config,
         )
@@ -133,7 +133,7 @@ impl Behaviour {
 
         let swarm_api = Swarm::new();
         Behaviour {
-            swarm_api: swarm_api,
+            swarm_api,
             gossipsub,
             mdns: mdns_opt.into(),
             ping: Ping::default(),
@@ -169,7 +169,7 @@ impl Behaviour {
 
     /// Adds peer to the peer set.
     pub fn add_peer(&mut self, peer_id: PeerId) {
-        self.peers.insert(peer_id.clone());
+        self.peers.insert(peer_id);
     }
 
     /// Adds peer to the peer set.
@@ -207,7 +207,7 @@ impl NetworkBehaviourEventProcess<MdnsEvent> for Behaviour {
             MdnsEvent::Discovered(list) => {
                 for (peer, addr) in list {
                     info!("mdns: Discovered peer {}", peer.to_base58());
-                    self.add_peer(peer.clone());
+                    self.add_peer(peer);
                     if self.kademlia.is_enabled() {
                         self.kademlia.as_mut().unwrap().add_address(&peer, addr);
                     }
@@ -312,8 +312,8 @@ impl NetworkBehaviourEventProcess<RequestResponseEvent<Vec<u8>, Vec<u8>>> for Be
                     debug!("Request Response message: {:?}", channel);
                 }
                 RequestResponseMessage::Response {
-                    request_id,
-                    response,
+                    request_id: _,
+                    response: _,
                 } => {}
             },
             RequestResponseEvent::OutboundFailure {

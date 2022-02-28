@@ -1,7 +1,7 @@
 pub mod config;
 pub mod firewall;
 pub mod handler;
-pub mod message;
+pub mod bundle;
 pub mod service;
 
 use zarb_types::crypto::signer::Signer;
@@ -16,5 +16,5 @@ pub fn create_sync_service(
     signer: Signer,
     network: &mut dyn NetworkService,
 ) -> Result<impl SyncService> {
-    Ok(ZarbSync::new(config, signer, network)?)
+    ZarbSync::new(config, signer, network)
 }

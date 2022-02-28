@@ -1,6 +1,5 @@
-use super::{config, config::Config};
-use crate::sync::message;
-use crate::{error::Result, sync::message::message::Message};
+use super::{config::Config};
+use crate::{error::Result, sync::bundle::bundle::Bundle};
 
 pub(crate) struct Firewall {
     config: Config,
@@ -13,7 +12,7 @@ impl Firewall {
         })
     }
 
-    pub fn open_message(&self, data: &[u8]) -> Result<Message> {
-        Message::from_bytes(data)
+    pub fn open_bundle(&self, data: &[u8]) -> Result<Bundle> {
+        Bundle::from_bytes(data)
     }
 }

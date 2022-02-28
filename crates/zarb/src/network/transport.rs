@@ -10,7 +10,7 @@ pub fn build_transport(local_key: &Keypair) -> Boxed<(PeerId, StreamMuxerBox)> {
     let transport = async_std::task::block_on(libp2p::dns::DnsConfig::system(transport)).unwrap();
     let auth_config = {
         let dh_keys = noise::Keypair::<noise::X25519Spec>::new()
-            .into_authentic(&local_key)
+            .into_authentic(local_key)
             .expect("Noise key generation failed");
 
         noise::NoiseConfig::xx(dh_keys).into_authenticated()

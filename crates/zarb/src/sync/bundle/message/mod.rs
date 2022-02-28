@@ -33,9 +33,9 @@ pub enum Type {
     BlockResponse,
 }
 
-pub trait Payload: Debug {
+pub trait Message: Debug {
     fn sanity_check(&self) -> Result<()>;
-    fn payload_type(&self) -> Type;
+    fn message_type(&self) -> Type;
     fn to_bytes(&self) -> Result<Vec<u8>>;
 
     fn as_any(&self) -> &dyn Any;
@@ -47,23 +47,23 @@ impl fmt::Display for Type {
         match self {
             Type::Hello => write!(f, "hello"),
             Type::Heartbeat => write!(f, "heartbeat"),
-            Type::QueryTransactions => write!(f, "querytransactions"),
+            Type::QueryTransactions => write!(f, "query transactions"),
             Type::Transactions => write!(f, "transactions"),
-            Type::QueryProposal => write!(f, "queryproposal"),
+            Type::QueryProposal => write!(f, "query proposal"),
             Type::Proposal => write!(f, "proposal"),
-            Type::QueryVotes => write!(f, "queryvotes"),
+            Type::QueryVotes => write!(f, "query votes"),
             Type::Vote => write!(f, "vote"),
-            Type::BlockAnnounce => write!(f, "blockannounce"),
-            Type::BlockRequest => write!(f, "blockrequest"),
-            Type::BlockResponse => write!(f, "blockresponse"),
+            Type::BlockAnnounce => write!(f, "block announce"),
+            Type::BlockRequest => write!(f, "block request"),
+            Type::BlockResponse => write!(f, "block response"),
         }
     }
 }
 
-const ResponseCodeNone: i32 = -1;
-const ResponseCodeOK: i32 = 0;
-const ResponseCodeRejected: i32 = 1;
-const ResponseCodeBusy: i32 = 2;
-const ResponseCodeMoreBlocks: i32 = 3;
-const ResponseCodeNoMoreBlocks: i32 = 4;
-const ResponseCodeSynced: i32 = 5;
+//const RESPONSE_CODE_NONE: i32 = -1;
+//const RESPONSE_CODE_OK: i32 = 0;
+//const RESPONSE_CODE_REJECTED: i32 = 1;
+//const RESPONSE_CODE_BUSY: i32 = 2;
+//const RESPONSE_CODE_MOREBLOCKS: i32 = 3;
+//const RESPONSE_CODE_NOMOREBLOCKS: i32 = 4;
+//const RESPONSE_CODE_SYNCED: i32 = 5;

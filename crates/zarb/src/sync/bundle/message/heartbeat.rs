@@ -1,14 +1,13 @@
-use std::any::Any;
-
-use super::Payload;
+use super::Message;
 use crate::error::{Error, Result};
 use minicbor::{Decode, Encode};
+use std::any::Any;
 use zarb_types::hash::Hash32;
 
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]
 
-pub struct HeartbeatPayload {
+pub struct HeartbeatMessage {
     #[n(1)]
     height: i32,
     #[n(2)]
@@ -17,7 +16,7 @@ pub struct HeartbeatPayload {
     prev_block_hash: Hash32,
 }
 
-impl Payload for HeartbeatPayload {
+impl Message for HeartbeatMessage {
     fn sanity_check(&self) -> super::Result<()> {
         if self.height < 0 {
             return Err(Error::InvalidMessage(format!(
@@ -34,7 +33,7 @@ impl Payload for HeartbeatPayload {
         Ok(())
     }
 
-    fn payload_type(&self) -> super::Type {
+    fn message_type(&self) -> super::Type {
         super::Type::Heartbeat
     }
 

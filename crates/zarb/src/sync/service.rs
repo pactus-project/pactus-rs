@@ -1,34 +1,34 @@
 use super::handler::hello::HelloHandler;
 use super::handler::Handler;
-use super::message::message::Message;
-use super::message::payload::hello::HelloPayload;
-use super::message::payload::{Payload, Type as PayloadType};
+use super::bundle::bundle::Bundle;
+use super::bundle::message::hello::HelloMessage;
+use super::bundle::message::{Message, Type as MessageType};
 use super::SyncService;
 use super::{config::Config, firewall::firewall::Firewall};
-use crate::error::{self, Result};
+use crate::error::{Result};
 use crate::network::NetworkEvent;
-use crate::network::{self, NetworkMessage, NetworkService};
+use crate::network::{NetworkMessage, NetworkService};
 use async_std::channel::{Receiver, Sender};
 use async_std::stream;
 use async_trait::async_trait;
 use futures::select;
 use futures_util::stream::StreamExt;
-use log::{debug, error, info, trace, warn};
-use zarb_types::crypto::public_key::PublicKey;
+use log::{error, info, warn};
+
 use zarb_types::crypto::signer::Signer;
-use zarb_types::crypto::signer::Signable;
+
 use std::collections::BTreeMap;
-use std::thread::sleep;
-use std::time::Duration;
+
+
 use zarb_types::hash::Hash32;
-use libp2p::{identity, PeerId};
+use libp2p::{PeerId};
 
 pub(super) struct ZarbSync {
     pub config: Config,
     pub self_id: PeerId,
     pub signer: Signer,
     firewall: Firewall,
-    handlers: BTreeMap<PayloadType, Handler>,
+    handlers: BTreeMap<MessageType, Handler>,
     network_message_sender: Sender<NetworkMessage>,
     network_event_receiver: Receiver<NetworkEvent>,
 }
@@ -41,11 +41,11 @@ impl ZarbSync {
         signer: Signer,
         network: &mut dyn NetworkService,
     ) -> Result<Self> {
-        let mut handlers: BTreeMap<PayloadType, Handler> = BTreeMap::new();
+        let mut handlers: BTreeMap<MessageType, Handler> = BTreeMap::new();
 
         let slm = HelloHandler::new();
 
-        handlers.insert(PayloadType::Hello, Handler::new(Box::new(slm)));
+        handlers.insert(MessageType::Hello, Handler::new(Box::new(slm)));
 
         Ok(Self {
             self_id: network.self_id(),
@@ -60,27 +60,27 @@ impl ZarbSync {
 
     fn say_hello(&self) {
         let h = hex::decode("073ba9d1300acd7c48d4c219953466b5c15f7087e9b0957a8e2381e9f9573e09").unwrap();
-        let pld = HelloPayload::new(
+        let msg = HelloMessage::new(
             self.self_id,
             self.config.moniker.clone(),
             0,
             0,
             Hash32::from_bytes(&h).unwrap(),
         );
-        self.broadcast(Box::new(pld));
+        self.broadcast(Box::new(msg));
     }
 
-    fn broadcast(&self, pld : Box<dyn Payload>) {
-        let msg  = self.prepare_message(pld).unwrap();
+    fn broadcast(&self, msg : Box<dyn Message>) {
+        let bdl  = self.prepare_bundle(msg).unwrap();
         let msg_data = NetworkMessage::GeneralMessage {
-            data: msg.to_bytes().unwrap(),
+            data: bdl.to_bytes().unwrap(),
         };
         self.network_message_sender.try_send(msg_data).unwrap();
     }
 
-    fn prepare_message(&self, pld: Box<dyn Payload>) -> Result<Message> {
-        let handler =  self.handlers.get(&pld.payload_type()).unwrap();
-        handler.do_prepare_message(pld, self)
+    fn prepare_bundle(&self, msg: Box<dyn Message>) -> Result<Bundle> {
+        let handler =  self.handlers.get(&msg.message_type()).unwrap();
+        handler.do_prepare_bundle(msg, self)
     }
 }
 
@@ -102,20 +102,20 @@ impl crate::Service for ZarbSync {
                         NetworkEvent::PeerDisconnected(peer_id) =>{
                             info!("peer disconnected {:?}", peer_id);
                         }
-                        NetworkEvent::MessageReceived{source, data} =>{
-                            match self.firewall.open_message(&data) {
-                                Ok(msg) => {
-                                    match self.handlers.get(&msg.payload_type()) {
+                        NetworkEvent::MessageReceived{source: _, data} =>{
+                            match self.firewall.open_bundle(&data) {
+                                Ok(bdl) => {
+                                    match self.handlers.get(&bdl.message_type()) {
                                         Some(handler) => {
-                                            handler.do_pars_payload(msg.payload, &self);
+                                            handler.do_pars_message(bdl.message, &self);
                                         }
                                         None => {
-                                            error!("invalid payload type: {:?}", msg.payload_type())
+                                            error!("invalid message type: {:?}", bdl.message_type())
                                         }
                                     }
                                 }
                                 Err(err) => {
-                                    warn!("invalid message: {}", err);
+                                    warn!("invalid bundle: {}", err);
                                 }
                             };
                         }

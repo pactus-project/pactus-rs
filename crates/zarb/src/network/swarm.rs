@@ -41,12 +41,12 @@ impl NetworkBehaviour for Swarm {
 
     fn inject_connected(&mut self, peer_id: &PeerId) {
         self.events
-            .push_back(SwarmEvent::PeerConnected(peer_id.clone()))
+            .push_back(SwarmEvent::PeerConnected(*peer_id))
     }
 
     fn inject_disconnected(&mut self, peer_id: &PeerId) {
         self.events
-            .push_back(SwarmEvent::PeerDisconnected(peer_id.clone()))
+            .push_back(SwarmEvent::PeerDisconnected(*peer_id))
     }
 
     fn inject_event(
