@@ -16,5 +16,5 @@ pub fn create_sync_service(
     signer: Signer,
     network: &mut dyn NetworkService,
 ) -> Result<impl SyncService> {
-    Ok(ZarbSync::new(config, signer, network)?)
+    ZarbSync::new(config, signer, network)
 }

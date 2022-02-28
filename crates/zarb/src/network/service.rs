@@ -34,7 +34,7 @@ async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
 
 impl NetworkService for ZarbNetwork {
     fn self_id(&self) -> PeerId {
-        self.swarm.local_peer_id().clone()
+        *self.swarm.local_peer_id()
     }
     fn message_sender(&self) -> Sender<NetworkMessage> {
         self.message_sender.clone()
@@ -49,13 +49,13 @@ impl ZarbNetwork {
     pub fn new(config: Config) -> Result<Self> {
         let local_key = identity::Keypair::generate_ed25519();
         let local_public = local_key.public();
-        let local_peer_id = local_public.clone().to_peer_id();
-        info!("local node identity is: {}", local_peer_id.to_base58());
+        let self_id = local_public.to_peer_id();
+        info!("node identity is: {}", self_id.to_base58());
 
         let transport = transport::build_transport(&local_key);
         let behaviour = Behaviour::new(&local_key, &config);
 
-        let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
+        let mut swarm = Swarm::new(transport, behaviour, self_id);
 
         Swarm::listen_on(&mut swarm, config.listening_addr.clone()).unwrap();
 
@@ -181,7 +181,7 @@ impl crate::Service for ZarbNetwork {
                                 warn!("failed to publish message: {:?}", e);
                             }
                         }
-                        NetworkMessage::StreamMessage{target, data} =>{
+                        NetworkMessage::StreamMessage{target: _, data: _} =>{
                         }
                     },
                     None => { break; }

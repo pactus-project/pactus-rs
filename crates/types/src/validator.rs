@@ -1,4 +1,3 @@
-use crate::crypto::bls::public_key::PublicKey;
 use minicbor::{Decode, Encode, bytes::ByteVec};
 
 #[derive(Encode, Decode)]

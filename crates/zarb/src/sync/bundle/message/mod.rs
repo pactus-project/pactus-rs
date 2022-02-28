@@ -60,10 +60,10 @@ impl fmt::Display for Type {
     }
 }
 
-const ResponseCodeNone: i32 = -1;
-const ResponseCodeOK: i32 = 0;
-const ResponseCodeRejected: i32 = 1;
-const ResponseCodeBusy: i32 = 2;
-const ResponseCodeMoreBlocks: i32 = 3;
-const ResponseCodeNoMoreBlocks: i32 = 4;
-const ResponseCodeSynced: i32 = 5;
+//const RESPONSE_CODE_NONE: i32 = -1;
+//const RESPONSE_CODE_OK: i32 = 0;
+//const RESPONSE_CODE_REJECTED: i32 = 1;
+//const RESPONSE_CODE_BUSY: i32 = 2;
+//const RESPONSE_CODE_MOREBLOCKS: i32 = 3;
+//const RESPONSE_CODE_NOMOREBLOCKS: i32 = 4;
+//const RESPONSE_CODE_SYNCED: i32 = 5;

@@ -30,5 +30,5 @@ pub trait NetworkService: crate::Service {
 }
 
 pub fn create_network_service(config: config::Config) -> Result<impl NetworkService> {
-    Ok(ZarbNetwork::new(config)?)
+    ZarbNetwork::new(config)
 }

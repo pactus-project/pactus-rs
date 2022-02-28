@@ -1,4 +1,4 @@
-use crate::file::{load_json_file, load_text_file, load_toml_file};
+use crate::file::{load_text_file, load_toml_file};
 use anyhow::Result;
 use async_std::task;
 use std::sync::atomic::{AtomicBool, Ordering};

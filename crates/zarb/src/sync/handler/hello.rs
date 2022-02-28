@@ -15,7 +15,7 @@ impl HelloHandler {
 }
 
 impl HandlerStrategy for HelloHandler {
-    fn pars_message(&self, msg: Box<dyn Message>, sync: &ZarbSync) -> Result<()> {
+    fn pars_message(&self, msg: Box<dyn Message>, _sync: &ZarbSync) -> Result<()> {
         let pld = msg.as_any().downcast_ref::<HelloMessage>().unwrap();
         info!("Hello message: {}", pld.moniker);
 

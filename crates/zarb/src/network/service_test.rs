@@ -30,7 +30,7 @@ mod tests {
         )
         .parse()
         .unwrap();
-        let mut net2 = ZarbNetwork::new(conf2).unwrap();
+        let net2 = ZarbNetwork::new(conf2).unwrap();
 
         let net1_sender = net1.message_sender();
         let net2_receiver = net2.event_receiver();

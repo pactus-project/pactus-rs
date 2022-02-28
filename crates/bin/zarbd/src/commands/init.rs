@@ -1,7 +1,6 @@
 use crate::file::{save_text_file, save_toml_file};
 use anyhow::Result;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use structopt::StructOpt;
 use zarb::config::Config;
 use zarb_types::crypto::bls::secret_key::SecretKey;
@@ -26,7 +25,6 @@ impl InitCmd {
 
         let mut dir = self.working_dir.clone();
         dir.push(std::path::MAIN_SEPARATOR);
-
 
         save_toml_file(&node_config, dir.clone() + super::CONFIG_FILE_NAME)?;
         save_text_file(

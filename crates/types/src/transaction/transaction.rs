@@ -2,7 +2,7 @@ use super::payload;
 use crate::crypto::public_key::PublicKey;
 use crate::crypto::signature::Signature;
 use crate::crypto::KeyPairType;
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::stamp::Stamp;
 use minicbor::bytes::ByteVec;
 use minicbor::{Decode, Encode};
@@ -92,14 +92,14 @@ impl Transaction {
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
         let payload_data = ByteVec::from(self.payload.to_bytes()?);
-        let public_key_data = match self.public_key.as_ref() {
-            Some(pk) => Some(ByteVec::from(pk.to_bytes())),
-            None => None,
-        };
-        let signature_data = match self.signature.as_ref() {
-            Some(sig) => Some(ByteVec::from(sig.to_bytes())),
-            None => None,
-        };
+        let public_key_data = self
+            .public_key
+            .as_ref()
+            .map(|pk| ByteVec::from(pk.to_bytes()));
+        let signature_data = self
+            .signature
+            .as_ref()
+            .map(|sig| ByteVec::from(sig.to_bytes()));
 
         let raw = RawTransaction {
             version: 1,
@@ -133,7 +133,7 @@ impl Transaction {
 
     pub fn check_signature(&self) -> bool {
         self.public_key.as_ref().unwrap().verify(
-            &self.signature.as_ref().unwrap(),
+            self.signature.as_ref().unwrap(),
             &self.sign_bytes().unwrap(),
         )
     }

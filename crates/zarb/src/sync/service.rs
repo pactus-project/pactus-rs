@@ -5,23 +5,23 @@ use super::bundle::message::hello::HelloMessage;
 use super::bundle::message::{Message, Type as MessageType};
 use super::SyncService;
 use super::{config::Config, firewall::firewall::Firewall};
-use crate::error::{self, Result};
+use crate::error::{Result};
 use crate::network::NetworkEvent;
-use crate::network::{self, NetworkMessage, NetworkService};
+use crate::network::{NetworkMessage, NetworkService};
 use async_std::channel::{Receiver, Sender};
 use async_std::stream;
 use async_trait::async_trait;
 use futures::select;
 use futures_util::stream::StreamExt;
-use log::{debug, error, info, trace, warn};
-use zarb_types::crypto::public_key::PublicKey;
+use log::{error, info, warn};
+
 use zarb_types::crypto::signer::Signer;
-use zarb_types::crypto::signer::Signable;
+
 use std::collections::BTreeMap;
-use std::thread::sleep;
-use std::time::Duration;
+
+
 use zarb_types::hash::Hash32;
-use libp2p::{identity, PeerId};
+use libp2p::{PeerId};
 
 pub(super) struct ZarbSync {
     pub config: Config,
@@ -102,7 +102,7 @@ impl crate::Service for ZarbSync {
                         NetworkEvent::PeerDisconnected(peer_id) =>{
                             info!("peer disconnected {:?}", peer_id);
                         }
-                        NetworkEvent::MessageReceived{source, data} =>{
+                        NetworkEvent::MessageReceived{source: _, data} =>{
                             match self.firewall.open_bundle(&data) {
                                 Ok(bdl) => {
                                     match self.handlers.get(&bdl.message_type()) {

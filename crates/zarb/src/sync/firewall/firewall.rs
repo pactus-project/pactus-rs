@@ -1,5 +1,4 @@
-use super::{config, config::Config};
-use crate::sync::bundle;
+use super::{config::Config};
 use crate::{error::Result, sync::bundle::bundle::Bundle};
 
 pub(crate) struct Firewall {
