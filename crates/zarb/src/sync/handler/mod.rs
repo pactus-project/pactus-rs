@@ -35,7 +35,7 @@ impl Handler {
     }
 }
 
-fn decode_payload<T>(data: &[u8]) -> Result<T>
+fn decode_message<T>(data: &[u8]) -> Result<T>
 where
     T: for<'r> Decode<'r>,
 {

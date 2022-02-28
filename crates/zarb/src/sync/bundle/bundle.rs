@@ -34,7 +34,7 @@ impl Bundle {
         let raw: RawBundle = minicbor::decode(data)?;
         let initiator = PeerId::from_bytes(&raw.initiator_data)
             .map_err(|err| Error::DecodeError(err.to_string()))?;
-        let pld: Box<dyn Message> = match raw.message_type {
+        let msg: Box<dyn Message> = match raw.message_type {
             Type::Hello => Box::new(minicbor::decode::<hello::HelloMessage>(
                 raw.message_data.as_ref(),
             )?),
@@ -46,7 +46,7 @@ impl Bundle {
             }
         };
 
-        Self::new(initiator, pld)
+        Self::new(initiator, msg)
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
