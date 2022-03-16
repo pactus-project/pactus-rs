@@ -3,13 +3,13 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("CBOR decoding error")]
+    #[error("decoding error: {0}")]
     DecodeError(String),
-    #[error("CBOR encoding error")]
+    #[error("encoding error: {0}")]
     EncodeError(String),
-    #[error("Network Error")]
+    #[error("network Error: {0}")]
     NetworkError(String),
-    #[error("invalid message")]
+    #[error("invalid message: {0}")]
     InvalidMessage(String),
 }
 

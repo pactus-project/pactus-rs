@@ -58,13 +58,17 @@ impl ZarbSync {
         })
     }
 
-    fn say_hello(&self) {
-        let h = hex::decode("073ba9d1300acd7c48d4c219953466b5c15f7087e9b0957a8e2381e9f9573e09").unwrap();
+    pub fn say_hello(&self, need_response: bool) {
+        let h = hex::decode("2b1187d5f470de8d186634e3e227c528a292c0a3ba95fae924be27e8e7f46fa0").unwrap();
+        let mut flags = 0;
+        if need_response {
+            flags |= 1;
+        }
         let msg = HelloMessage::new(
             self.self_id,
             self.config.moniker.clone(),
             0,
-            0,
+            flags,
             Hash32::from_bytes(&h).unwrap(),
         );
         self.broadcast(Box::new(msg));
@@ -90,7 +94,7 @@ impl crate::Service for ZarbSync {
         let mut heartbeat_ticker = stream::interval(self.config.heartbeat_timeout).fuse();
         let mut network_stream = self.network_event_receiver.clone().fuse();
 
-        self.say_hello();
+        self.say_hello(true);
 
         loop {
             select! {

@@ -20,7 +20,7 @@ pub struct Transaction {
 
 #[derive(Encode, Decode)]
 #[cbor(map)]
-struct RawTransaction {
+pub(crate) struct RawTransaction {
     #[n(1)]
     pub version: i32,
     #[n(2)]
@@ -35,9 +35,9 @@ struct RawTransaction {
     pub payload_data: ByteVec,
     #[n(7)]
     pub memo: String,
-    #[n(20)]
+    #[n(8)]
     pub public_key_data: Option<ByteVec>,
-    #[n(21)]
+    #[n(9)]
     pub signature_data: Option<ByteVec>,
 }
 
@@ -50,8 +50,8 @@ impl Transaction {
         payload: Box<dyn payload::Payload>,
         public_key: Option<PublicKey>,
         signature: Option<Signature>,
-    ) -> Result<Self> {
-        Ok(Transaction {
+    ) -> Self {
+        Transaction {
             stamp,
             sequence,
             fee,
@@ -59,10 +59,9 @@ impl Transaction {
             payload,
             public_key,
             signature,
-        })
+        }
     }
-    pub fn from_bytes(data: &[u8]) -> Result<Self> {
-        let raw: RawTransaction = minicbor::decode(data)?;
+    pub(crate) fn from_raw_transaction(raw: RawTransaction) -> Result<Self> {
         let payload = Box::new(match raw.payload_type {
             payload::Type::Send => {
                 minicbor::decode::<payload::send::SendPayload>(raw.payload_data.as_ref())?
@@ -79,7 +78,7 @@ impl Transaction {
             None => None,
         };
 
-        Self::new(
+        Ok(Self::new(
             raw.stamp,
             raw.sequence,
             raw.fee,
@@ -87,10 +86,10 @@ impl Transaction {
             payload,
             public_key,
             signature,
-        )
+        ))
     }
 
-    pub fn to_bytes(&self) -> Result<Vec<u8>> {
+    pub(crate) fn to_raw_transaction(&self) -> Result<RawTransaction> {
         let payload_data = ByteVec::from(self.payload.to_bytes()?);
         let public_key_data = self
             .public_key
@@ -101,7 +100,7 @@ impl Transaction {
             .as_ref()
             .map(|sig| ByteVec::from(sig.to_bytes()));
 
-        let raw = RawTransaction {
+        Ok(RawTransaction {
             version: 1,
             stamp: self.stamp.clone(),
             sequence: self.sequence,
@@ -111,8 +110,15 @@ impl Transaction {
             payload_data,
             public_key_data,
             signature_data,
-        };
-        Ok(minicbor::to_vec(raw)?)
+        })
+    }
+
+    pub fn from_bytes(data: &[u8]) -> Result<Self> {
+        Self::from_raw_transaction(minicbor::decode(data)?)
+    }
+
+    pub fn to_bytes(&self) -> Result<Vec<u8>> {
+        Ok(minicbor::to_vec(self.to_raw_transaction()?)?)
     }
 
     fn sign_bytes(&self) -> Result<Vec<u8>> {
