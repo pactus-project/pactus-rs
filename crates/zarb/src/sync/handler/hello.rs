@@ -15,11 +15,12 @@ impl HelloHandler {
 }
 
 impl HandlerStrategy for HelloHandler {
-    fn pars_message(&self, msg: Box<dyn Message>, _sync: &ZarbSync) -> Result<()> {
+    fn pars_message(&self, msg: Box<dyn Message>, sync: &ZarbSync) -> Result<()> {
         let msg = msg.as_any().downcast_ref::<HelloMessage>().unwrap();
         info!("Hello message: {}", msg.moniker);
 
-        todo!()
+        sync.say_hello(false);
+        Ok(())
     }
 
     fn prepare_bundle(&self, mut msg: Box<dyn Message>, sync: &ZarbSync) -> Result<Bundle> {

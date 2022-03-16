@@ -89,17 +89,17 @@ impl ZarbNetwork {
         self.config.network_name.clone()
     }
 
-    fn get_topic(&self, topic_name: &str) -> IdentTopic {
+    fn topic(&self, topic_name: &str) -> IdentTopic {
         let topic_name = format!("/{}/topic/{}/v1", self.config.network_name, topic_name);
         Topic::new(topic_name)
     }
 
-    fn get_general_topic(&self) -> IdentTopic {
-        self.get_topic("general")
+    fn general_topic(&self) -> IdentTopic {
+        self.topic("general")
     }
 
-    fn get_consensus_topic(&self) -> IdentTopic {
-        self.get_topic("consensus")
+    fn consensus_topic(&self) -> IdentTopic {
+        self.topic("consensus")
     }
 
     // fn join_general_topic(&mut self) -> Result<bool> {
@@ -122,8 +122,8 @@ impl ZarbNetwork {
 #[async_trait]
 impl crate::Service for ZarbNetwork {
     async fn start(self) {
-        let general_topic = self.get_general_topic();
-        let consensus_topic = self.get_consensus_topic();
+        let general_topic = self.general_topic();
+        let consensus_topic = self.consensus_topic();
         let mut swarm_stream = self.swarm.fuse();
         let mut network_stream = self.message_receiver.fuse();
         let mut interval = stream::interval(Duration::from_secs(10)).fuse();
@@ -167,7 +167,6 @@ impl crate::Service for ZarbNetwork {
                 message = network_stream.next() => match message {
                     Some(msg) => match msg {
                         NetworkMessage::GeneralMessage{data} =>{
-                            info!("{}", hex::encode(&data));
                             if let Err(e) = swarm_stream.get_mut().behaviour_mut().publish(general_topic.clone(), data) {
                                 warn!("failed to publish message: {:?}", e);
                             }

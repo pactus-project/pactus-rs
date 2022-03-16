@@ -14,23 +14,21 @@ pub enum Type {
     #[n(2)]
     Heartbeat,
     #[n(3)]
-    QueryTransactions,
-    #[n(4)]
     Transactions,
-    #[n(5)]
+    #[n(4)]
     QueryProposal,
-    #[n(6)]
+    #[n(5)]
     Proposal,
-    #[n(7)]
+    #[n(6)]
     QueryVotes,
-    #[n(8)]
+    #[n(7)]
     Vote,
-    #[n(9)]
+    #[n(8)]
     BlockAnnounce,
-    #[n(13)]
-    BlockRequest,
-    #[n(14)]
-    BlockResponse,
+    #[n(9)]
+    BlocksRequest,
+    #[n(10)]
+    BlocksResponse,
 }
 
 pub trait Message: Debug {
@@ -47,15 +45,14 @@ impl fmt::Display for Type {
         match self {
             Type::Hello => write!(f, "hello"),
             Type::Heartbeat => write!(f, "heartbeat"),
-            Type::QueryTransactions => write!(f, "query transactions"),
             Type::Transactions => write!(f, "transactions"),
             Type::QueryProposal => write!(f, "query proposal"),
             Type::Proposal => write!(f, "proposal"),
             Type::QueryVotes => write!(f, "query votes"),
             Type::Vote => write!(f, "vote"),
             Type::BlockAnnounce => write!(f, "block announce"),
-            Type::BlockRequest => write!(f, "block request"),
-            Type::BlockResponse => write!(f, "block response"),
+            Type::BlocksRequest => write!(f, "block request"),
+            Type::BlocksResponse => write!(f, "block response"),
         }
     }
 }
