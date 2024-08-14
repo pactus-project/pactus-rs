@@ -1,13 +1,13 @@
 [package]
-name = "zarb"
+name = "pactus"
 version = "0.1.0"
 edition = "2021"
-authors = ["Zarb <admin@zarb.network>"]
+authors = ["Pactus <info@pactus.org>"]
 
 [dependencies]
-zarb-types = { path = "../types" }
+pactus-types = { path = "../types" }
 thiserror = "1.0"
-minicbor = { version = "0.12", features = ["std", "half", "derive"] }
+minicbor = { version = "0.24", features = ["std", "half", "derive"] }
 libp2p = { version = "0.45.1", default-features = false, features = [
     "gossipsub",
     "kad",
@@ -28,11 +28,11 @@ async-std = { version = "1.10", features = ["unstable", "attributes"] }
 serde = "1.0"
 log = "0.4"
 void = "1.0"
-cid = "0.7"
+cid = "0.11"
 futures-util = "0.3"
 hex = "0.4"
 
 [dev-dependencies]
 hex = "0.4"
-simple_logger = "1.16"
+simple_logger = "5.0"
 portpicker = "0.1"

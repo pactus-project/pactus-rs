@@ -32,7 +32,7 @@ pub enum Type {
 }
 
 pub trait Message: Debug {
-    fn sanity_check(&self) -> Result<()>;
+    fn basic_check(&self) -> Result<()>;
     fn message_type(&self) -> Type;
     fn to_bytes(&self) -> Result<Vec<u8>>;
 

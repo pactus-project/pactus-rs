@@ -2,7 +2,7 @@ use super::Message;
 use crate::error::{Error, Result};
 use minicbor::{Decode, Encode};
 use std::any::Any;
-use zarb_types::hash::Hash32;
+use pactus_types::hash::Hash32;
 
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]
@@ -17,7 +17,7 @@ pub struct HeartbeatMessage {
 }
 
 impl Message for HeartbeatMessage {
-    fn sanity_check(&self) -> super::Result<()> {
+    fn basic_check(&self) -> super::Result<()> {
         if self.height < 0 {
             return Err(Error::InvalidMessage(format!(
                 "invalid height: {}",

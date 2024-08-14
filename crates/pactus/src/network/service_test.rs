@@ -1,7 +1,7 @@
 mod tests {
     use crate::network::{
         config::Config,
-        service::ZarbNetwork,
+        service::PactusNetwork,
         {NetworkEvent, NetworkMessage, NetworkService},
     };
     use crate::Service;
@@ -12,7 +12,7 @@ mod tests {
     #[test]
     fn network_initialize() {
         let conf = Config::default();
-        let net = ZarbNetwork::new(conf);
+        let net = PactusNetwork::new(conf);
         assert!(net.is_ok(), "Network initialization failed");
     }
 
@@ -21,7 +21,7 @@ mod tests {
         SimpleLogger::new().with_utc_timestamps().init().unwrap();
 
         let conf1 = Config::default();
-        let net1 = ZarbNetwork::new(conf1).unwrap();
+        let net1 = PactusNetwork::new(conf1).unwrap();
 
         let mut conf2 = Config::default();
         conf2.listening_addr = format!(
@@ -30,7 +30,7 @@ mod tests {
         )
         .parse()
         .unwrap();
-        let net2 = ZarbNetwork::new(conf2).unwrap();
+        let net2 = PactusNetwork::new(conf2).unwrap();
 
         let net1_sender = net1.message_sender();
         let net2_receiver = net2.event_receiver();

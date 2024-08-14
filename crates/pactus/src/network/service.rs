@@ -17,7 +17,7 @@ use libp2p::{identity, PeerId};
 use log::{debug, error, info, warn};
 use std::time::Duration;
 
-pub(super) struct ZarbNetwork {
+pub(super) struct PactusNetwork {
     config: Config,
     swarm: Swarm<Behaviour>,
     message_receiver: Receiver<NetworkMessage>,
@@ -32,7 +32,7 @@ async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
     }
 }
 
-impl NetworkService for ZarbNetwork {
+impl NetworkService for PactusNetwork {
     fn self_id(&self) -> PeerId {
         *self.swarm.local_peer_id()
     }
@@ -45,7 +45,7 @@ impl NetworkService for ZarbNetwork {
     }
 }
 
-impl ZarbNetwork {
+impl PactusNetwork {
     pub fn new(config: Config) -> Result<Self> {
         let local_key = identity::Keypair::generate_ed25519();
         let local_public = local_key.public();
@@ -120,7 +120,7 @@ impl ZarbNetwork {
 
 
 #[async_trait]
-impl crate::Service for ZarbNetwork {
+impl crate::Service for PactusNetwork {
     async fn start(self) {
         let general_topic = self.general_topic();
         let consensus_topic = self.consensus_topic();

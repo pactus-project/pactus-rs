@@ -3,11 +3,11 @@ use crate::error::{Error, Result};
 use libp2p::PeerId;
 use minicbor::{bytes::ByteVec, Decode, Encode};
 use std::any::Any;
-use zarb_types::crypto::public_key::PublicKey;
-use zarb_types::crypto::signature::Signature;
-use zarb_types::crypto::signer::Signable;
-use zarb_types::crypto::KeyPairType;
-use zarb_types::hash::Hash32;
+use pactus_types::crypto::public_key::PublicKey;
+use pactus_types::crypto::signature::Signature;
+use pactus_types::crypto::signer::Signable;
+use pactus_types::crypto::KeyPairType;
+use pactus_types::hash::Hash32;
 
 #[derive(Debug, Encode, Decode)]
 #[cbor(map)]
@@ -66,7 +66,7 @@ impl HelloMessage {
 }
 
 impl Message for HelloMessage {
-    fn sanity_check(&self) -> super::Result<()> {
+    fn basic_check(&self) -> super::Result<()> {
         if self.height < 0 {
             return Err(Error::InvalidMessage(format!(
                 "invalid height: {}",

@@ -25,9 +25,9 @@ impl SecretKey {
             SecretKey::BLS(sec) => sec.to_bytes(),
         }
     }
-    pub fn sanity_check(&self) -> Result<()> {
+    pub fn basic_check(&self) -> Result<()> {
         match self {
-            SecretKey::BLS(sec) => sec.sanity_check(),
+            SecretKey::BLS(sec) => sec.basic_check(),
         }
     }
     pub fn public_key(&self) -> PublicKey {

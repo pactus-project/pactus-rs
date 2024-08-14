@@ -11,13 +11,13 @@ pub const VALIDATOR_KEY_FILE_NAME: &str = "validator_key";
 
 lazy_static! {
     static ref DEFAULT_WORKING_DIR: String =
-        format!("{}/zarb", env::var("HOME").as_deref().unwrap_or("."));
+        format!("{}/pactus", env::var("HOME").as_deref().unwrap_or("."));
 }
 
 use crate::commands::init::InitCmd;
 use crate::commands::start::StartCmd;
 
-pub trait ZarbdCommand {
+pub trait PactusDaemonCommand {
     /// Returns the result of the command execution.
     fn execute(self) -> Result<()>;
 }
@@ -38,7 +38,7 @@ impl Command {
     }
 }
 
-impl ZarbdCommand for Command {
+impl PactusDaemonCommand for Command {
     fn execute(self) -> Result<()> {
         match self {
             Self::Init(command) => command.execute(),

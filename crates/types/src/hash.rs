@@ -45,6 +45,6 @@ mod tests {
     fn test_calc() {
         let buf = hex::decode("12b38977f2d67f06f0c0cd54aaf7324cf4fee184398ea33d295e8d1543c2ee1a")
             .unwrap();
-        assert_eq!(Hash32::calculate("zarb".as_bytes()).0.to_vec(), buf.to_vec());
+        assert_eq!(Hash32::calculate("pactus".as_bytes()).0.to_vec(), buf.to_vec());
     }
 }

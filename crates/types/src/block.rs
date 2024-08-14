@@ -32,6 +32,7 @@ pub struct BlockHeader {
 }
 
 pub struct Transactions(Vec<Transaction>);
+
 impl Transactions {
     fn with_capacity(capacity: usize) -> Self {
         Transactions(Vec::with_capacity(capacity))
@@ -41,29 +42,31 @@ impl Transactions {
         self.0.push(tx)
     }
 
-    pub(crate) fn decode<'b>(
+    pub(crate) fn decode<'b, C>(
         d: &mut Decoder<'b>,
+        _ctx: &mut C,
     ) -> std::result::Result<Transactions, DecodeError> {
         // TODO: format error: https://gitlab.com/twittner/minicbor/-/issues/16
         let raw_txs: Vec<RawTransaction> = d.decode()?;
         let mut txs = Transactions::with_capacity(raw_txs.len());
         for raw_tx in raw_txs {
             txs.push(Transaction::from_raw_transaction(raw_tx)
-                .map_err(|_| DecodeError::Message(&"decoding error"))?);
+                .map_err(|_| DecodeError::message(&"decoding error"))?);
         }
 
         Ok(txs)
     }
 
-    pub(crate) fn encode<W: Write>(
+    pub(crate) fn encode<W: Write, C>(
         txs: &Transactions,
         e: &mut Encoder<W>,
+        _ctx: &mut C,
     ) -> std::result::Result<(), EncodeError<W::Error>> {
         // TODO: format error: https://gitlab.com/twittner/minicbor/-/issues/16
         let mut raw_txs = Vec::<RawTransaction>::with_capacity(txs.len());
         for tx in &txs.0 {
             raw_txs.push(tx.to_raw_transaction()
-            .map_err(|_| EncodeError::Message(&"encoding error"))?);
+            .map_err(|_| EncodeError::message(&"encoding error"))?);
         }
 
         e.encode(raw_txs)?;

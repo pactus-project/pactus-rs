@@ -1,1 +1,4 @@
-# Zarb-rs
+# Pactrs-rs
+
+An implementation of Pactus in Rust Langrage
+

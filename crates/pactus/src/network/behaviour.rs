@@ -117,7 +117,7 @@ impl Behaviour {
             None
         };
 
-        let identify = Identify::new(IdentifyConfig::new("zarb/v1".into(), local_key.public()));
+        let identify = Identify::new(IdentifyConfig::new("pactus/v1".into(), local_key.public()));
 
         let gs_config_builder = GossipsubConfigBuilder::default();
         // gs_config_builder.message_id_fn(|msg: &GossipsubMessage| {

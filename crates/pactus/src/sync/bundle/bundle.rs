@@ -64,8 +64,8 @@ impl Bundle {
         Ok(minicbor::to_vec(raw)?)
     }
 
-    pub fn sanity_check(&self) -> Result<()> {
-        self.message.sanity_check()
+    pub fn basic_check(&self) -> Result<()> {
+        self.message.basic_check()
     }
 
     pub fn message_type(&self) -> Type {

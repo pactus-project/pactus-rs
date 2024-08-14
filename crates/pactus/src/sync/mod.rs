@@ -4,8 +4,8 @@ pub mod handler;
 pub mod bundle;
 pub mod service;
 
-use zarb_types::crypto::signer::Signer;
-use self::service::ZarbSync;
+use pactus_types::crypto::signer::Signer;
+use self::service::PactusSync;
 use crate::error::Result;
 use crate::network::NetworkService;
 
@@ -16,5 +16,5 @@ pub fn create_sync_service(
     signer: Signer,
     network: &mut dyn NetworkService,
 ) -> Result<impl SyncService> {
-    ZarbSync::new(config, signer, network)
+    PactusSync::new(config, signer, network)
 }
