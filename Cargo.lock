@@ -2239,7 +2239,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "pactus-daemon"
+name = "pactus-types"
+version = "0.1.0"
+dependencies = [
+ "blake2b_simd",
+ "bls12_381_plus",
+ "group",
+ "hex",
+ "minicbor",
+ "rand 0.8.5",
+ "ripemd",
+ "sha2 0.10.8",
+ "thiserror",
+]
+
+[[package]]
+name = "pactusd"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -2256,21 +2271,6 @@ dependencies = [
  "structopt",
  "tempfile",
  "toml 0.8.19",
-]
-
-[[package]]
-name = "pactus-types"
-version = "0.1.0"
-dependencies = [
- "blake2b_simd",
- "bls12_381_plus",
- "group",
- "hex",
- "minicbor",
- "rand 0.8.5",
- "ripemd",
- "sha2 0.10.8",
- "thiserror",
 ]
 
 [[package]]

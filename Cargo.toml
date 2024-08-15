@@ -2,5 +2,5 @@
 members = [
     "crates/types",
     "crates/pactus",
-    "crates/bin/pactus-daemon",
+    "crates/bin/pactusd",
 ]

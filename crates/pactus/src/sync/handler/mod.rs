@@ -37,7 +37,7 @@ impl Handler {
 
 fn decode_message<T, C>(data: &[u8]) -> Result<T>
 where
-    T: for<'r> Decode<'r, C>,
+    T: for<'r> Decode<'r, ()>,
 {
     Ok(minicbor::decode::<T>(data)?)
 }
