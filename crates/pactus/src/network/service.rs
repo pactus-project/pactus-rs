@@ -9,10 +9,8 @@ use async_trait::async_trait;
 use behaviour::{Behaviour, BehaviourEventOut};
 use futures::select;
 use futures_util::stream::StreamExt;
-use libp2p::gossipsub::IdentTopic;
-pub use libp2p::gossipsub::{Topic, TopicHash};
-use libp2p::swarm::SwarmEvent;
-use libp2p::Swarm;
+use libp2p::swarm::{ConnectionDenied, ConnectionId, SwarmEvent};
+use libp2p::{Multiaddr, Swarm};
 use libp2p::{identity, PeerId};
 use log::{debug, error, info, warn};
 use std::time::Duration;
@@ -43,6 +41,8 @@ impl NetworkService for PactusNetwork {
     fn event_receiver(&self) -> Receiver<NetworkEvent> {
         self.event_receiver.clone()
     }
+
+
 }
 
 impl PactusNetwork {
@@ -54,8 +54,9 @@ impl PactusNetwork {
 
         let transport = transport::build_transport(&local_key);
         let behaviour = Behaviour::new(&local_key, &config);
+        let config = Config::default();
 
-        let mut swarm = Swarm::new(transport, behaviour, self_id);
+        let mut swarm = Swarm::new(transport, behaviour, self_id, config);
 
         Swarm::listen_on(&mut swarm, config.listening_addr.clone()).unwrap();
 
@@ -89,16 +90,15 @@ impl PactusNetwork {
         self.config.network_name.clone()
     }
 
-    fn topic(&self, topic_name: &str) -> IdentTopic {
-        let topic_name = format!("/{}/topic/{}/v1", self.config.network_name, topic_name);
-        Topic::new(topic_name)
+    fn topic(&self, topic_name: &str) -> String {
+        format!("/{}/topic/{}/v1", self.config.network_name, topic_name)
     }
 
-    fn general_topic(&self) -> IdentTopic {
+    fn general_topic(&self) -> String {
         self.topic("general")
     }
 
-    fn consensus_topic(&self) -> IdentTopic {
+    fn consensus_topic(&self) -> String {
         self.topic("consensus")
     }
 
@@ -116,6 +116,8 @@ impl PactusNetwork {
     //         .subscribe(&topic)
     //         .map_err(|err| Error::NetworkError(format!("{:?}", err)))
     // }
+
+
 }
 
 
