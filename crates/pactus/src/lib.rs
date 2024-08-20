@@ -12,5 +12,5 @@ pub trait Service {
 
 
 pub fn agent() -> String {
-    format!("zarb-rs/{}", env!("CARGO_PKG_VERSION"))
+    format!("pactus-rs/{}", env!("CARGO_PKG_VERSION"))
 }

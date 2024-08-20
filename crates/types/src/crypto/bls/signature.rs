@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
-use bls12_381_plus::{ExpandMsgXmd, G1Affine, G1Projective};
+use elliptic_curve::hash2curve::ExpandMsgXmd;
+use bls12_381_plus::{elliptic_curve, G1Affine, G1Projective};
 use group::Curve;
 
 const SIGNATURE_KEY_SIZE: usize = 48;
@@ -27,7 +28,7 @@ impl Signature {
         self.to_fixed_bytes().to_vec()
     }
 
-    pub fn sanity_check(&self) -> Result<()> {
+    pub fn basic_check(&self) -> Result<()> {
         Ok(())
     }
 

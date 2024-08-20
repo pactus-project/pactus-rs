@@ -27,7 +27,7 @@ impl Payload for SendPayload {
     fn payload_type(&self) -> Type {
         Type::Send
     }
-    fn sanity_check(&self) -> Result<()> {
+    fn basic_check(&self) -> Result<()> {
         Ok(())
     }
     fn fingerprint(&self) -> String {

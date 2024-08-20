@@ -1,6 +1,6 @@
 [workspace]
 members = [
     "crates/types",
-    "crates/zarb",
-    "crates/bin/zarbd",
+    "crates/pactus",
+    "crates/bin/pactusd",
 ]

@@ -15,15 +15,15 @@ use futures::select;
 use futures_util::stream::StreamExt;
 use log::{error, info, warn};
 
-use zarb_types::crypto::signer::Signer;
+use pactus_types::crypto::signer::Signer;
 
 use std::collections::BTreeMap;
 
 
-use zarb_types::hash::Hash32;
+use pactus_types::hash::Hash32;
 use libp2p::{PeerId};
 
-pub(super) struct ZarbSync {
+pub(super) struct PactusSync {
     pub config: Config,
     pub self_id: PeerId,
     pub signer: Signer,
@@ -33,9 +33,9 @@ pub(super) struct ZarbSync {
     network_event_receiver: Receiver<NetworkEvent>,
 }
 
-impl SyncService for ZarbSync {}
+impl SyncService for PactusSync {}
 
-impl ZarbSync {
+impl PactusSync {
     pub fn new(
         config: Config,
         signer: Signer,
@@ -89,7 +89,7 @@ impl ZarbSync {
 }
 
 #[async_trait]
-impl crate::Service for ZarbSync {
+impl crate::Service for PactusSync {
     async fn start(self) {
         let mut heartbeat_ticker = stream::interval(self.config.heartbeat_timeout).fuse();
         let mut network_stream = self.network_event_receiver.clone().fuse();

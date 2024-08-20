@@ -20,9 +20,9 @@ impl Signature {
             Signature::BLS(sig) => sig.to_bytes(),
         }
     }
-    pub fn sanity_check(&self) -> Result<()> {
+    pub fn basic_check(&self) -> Result<()> {
         match self {
-            Signature::BLS(sig) => sig.sanity_check(),
+            Signature::BLS(sig) => sig.basic_check(),
         }
     }
 

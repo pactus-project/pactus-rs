@@ -40,6 +40,6 @@ pub trait Payload: Debug {
     fn signer(&self) -> &Address;
     fn value(&self) -> i64;
     fn payload_type(&self) -> Type;
-    fn sanity_check(&self) -> Result<()>;
+    fn basic_check(&self) -> Result<()>;
     fn fingerprint(&self) -> String;
 }

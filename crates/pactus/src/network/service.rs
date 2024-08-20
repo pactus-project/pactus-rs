@@ -9,15 +9,13 @@ use async_trait::async_trait;
 use behaviour::{Behaviour, BehaviourEventOut};
 use futures::select;
 use futures_util::stream::StreamExt;
-use libp2p::gossipsub::IdentTopic;
-pub use libp2p::gossipsub::{Topic, TopicHash};
-use libp2p::swarm::SwarmEvent;
-use libp2p::Swarm;
+use libp2p::swarm::{ConnectionDenied, ConnectionId, SwarmEvent};
+use libp2p::{Multiaddr, Swarm};
 use libp2p::{identity, PeerId};
 use log::{debug, error, info, warn};
 use std::time::Duration;
 
-pub(super) struct ZarbNetwork {
+pub(super) struct PactusNetwork {
     config: Config,
     swarm: Swarm<Behaviour>,
     message_receiver: Receiver<NetworkMessage>,
@@ -32,7 +30,7 @@ async fn emit_event(sender: &Sender<NetworkEvent>, event: NetworkEvent) {
     }
 }
 
-impl NetworkService for ZarbNetwork {
+impl NetworkService for PactusNetwork {
     fn self_id(&self) -> PeerId {
         *self.swarm.local_peer_id()
     }
@@ -43,9 +41,11 @@ impl NetworkService for ZarbNetwork {
     fn event_receiver(&self) -> Receiver<NetworkEvent> {
         self.event_receiver.clone()
     }
+
+
 }
 
-impl ZarbNetwork {
+impl PactusNetwork {
     pub fn new(config: Config) -> Result<Self> {
         let local_key = identity::Keypair::generate_ed25519();
         let local_public = local_key.public();
@@ -54,8 +54,9 @@ impl ZarbNetwork {
 
         let transport = transport::build_transport(&local_key);
         let behaviour = Behaviour::new(&local_key, &config);
+        let config = Config::default();
 
-        let mut swarm = Swarm::new(transport, behaviour, self_id);
+        let mut swarm = Swarm::new(transport, behaviour, self_id, config);
 
         Swarm::listen_on(&mut swarm, config.listening_addr.clone()).unwrap();
 
@@ -89,16 +90,15 @@ impl ZarbNetwork {
         self.config.network_name.clone()
     }
 
-    fn topic(&self, topic_name: &str) -> IdentTopic {
-        let topic_name = format!("/{}/topic/{}/v1", self.config.network_name, topic_name);
-        Topic::new(topic_name)
+    fn topic(&self, topic_name: &str) -> String {
+        format!("/{}/topic/{}/v1", self.config.network_name, topic_name)
     }
 
-    fn general_topic(&self) -> IdentTopic {
+    fn general_topic(&self) -> String {
         self.topic("general")
     }
 
-    fn consensus_topic(&self) -> IdentTopic {
+    fn consensus_topic(&self) -> String {
         self.topic("consensus")
     }
 
@@ -116,11 +116,13 @@ impl ZarbNetwork {
     //         .subscribe(&topic)
     //         .map_err(|err| Error::NetworkError(format!("{:?}", err)))
     // }
+
+
 }
 
 
 #[async_trait]
-impl crate::Service for ZarbNetwork {
+impl crate::Service for PactusNetwork {
     async fn start(self) {
         let general_topic = self.general_topic();
         let consensus_topic = self.consensus_topic();

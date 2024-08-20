@@ -1,0 +1,34 @@
+[package]
+name = "pactus"
+version = "0.1.0"
+edition = "2021"
+authors = ["Pactus <info@pactus.org>"]
+
+[dependencies]
+pactus-types = { path = "../types" }
+thiserror = "1.0"
+minicbor = { version = "0.24", features = ["std", "half", "derive"] }
+libp2p = { version = "0.54", features = ["noise", "tcp", "dns", "websocket", "yamux", "tokio",  "kad", "ping", "identify", "macros"] }
+libp2p-core = { version = "0.42", default-features = false}
+libp2p-metrics = "0.15"
+libp2p-noise = "0.45"
+libp2p-mplex = "0.42"
+libp2p-swarm = "0.45"
+libp2p-mdns = "0.46"
+libp2p-identity = "0.2"
+libp2p-connection-limits = "0.4"
+libp2p-kad = "0.46"
+futures = "0.3"
+async-trait = "0.1"
+async-std = { version = "1.10", features = ["unstable", "attributes"] }
+serde = "1.0"
+log = "0.4"
+void = "1.0"
+cid = "0.11"
+futures-util = "0.3"
+hex = "0.4"
+
+[dev-dependencies]
+hex = "0.4"
+simple_logger = "5.0"
+portpicker = "0.1"

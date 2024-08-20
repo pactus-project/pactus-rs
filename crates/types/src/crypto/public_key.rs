@@ -30,9 +30,9 @@ impl PublicKey {
         }
     }
 
-    pub fn  sanity_check(&self) -> Result<()> {
+    pub fn  basic_check(&self) -> Result<()> {
         match self {
-            PublicKey::BLS(pk) => pk.sanity_check(),
+            PublicKey::BLS(pk) => pk.basic_check(),
         }
     }
 

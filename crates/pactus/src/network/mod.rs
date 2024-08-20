@@ -8,7 +8,7 @@ pub mod service;
 pub use crate::error::Result;
 use async_std::channel::{Receiver, Sender};
 use libp2p::PeerId;
-use service::ZarbNetwork;
+use service::PactusNetwork;
 
 #[derive(Debug)]
 pub enum NetworkEvent {
@@ -30,5 +30,5 @@ pub trait NetworkService: crate::Service {
 }
 
 pub fn create_network_service(config: config::Config) -> Result<impl NetworkService> {
-    ZarbNetwork::new(config)
+    PactusNetwork::new(config)
 }

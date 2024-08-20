@@ -2,8 +2,8 @@ use crate::file::{save_text_file, save_toml_file};
 use anyhow::Result;
 use std::net::SocketAddr;
 use structopt::StructOpt;
-use zarb::config::Config;
-use zarb_types::crypto::bls::secret_key::SecretKey;
+use pactus::config::Config;
+use pactus_types::crypto::bls::secret_key::SecretKey;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "init", about = "Initializing the working directory")]

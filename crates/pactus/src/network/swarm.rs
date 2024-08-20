@@ -1,8 +1,9 @@
 use core::task::{Context, Poll};
-use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters};
-use libp2p::{
-    core::{connection::ConnectionId, Multiaddr, PeerId},
-    swarm::protocols_handler::{DummyProtocolsHandler, IntoProtocolsHandler, ProtocolsHandler},
+use libp2p::core::{connection::ConnectionId, Multiaddr, PeerId};
+use libp2p::swarm::handler::DummyConnectionHandler;
+use libp2p::swarm::{
+    ConnectionHandler, NetworkBehaviour, NetworkBehaviourAction, PollParameters, SwarmEvent,
+
 };
 use log::trace;
 use std::collections::VecDeque;
@@ -27,10 +28,10 @@ impl Swarm {
 }
 
 impl NetworkBehaviour for Swarm {
-    type ProtocolsHandler = DummyProtocolsHandler;
+    type ConnectionHandler = DummyConnectionHandler;
     type OutEvent = SwarmEvent;
 
-    fn new_handler(&mut self) -> Self::ProtocolsHandler {
+    fn new_handler(&mut self) -> Self::ConnectionHandler {
         trace!("new_handler");
         Default::default()
     }
@@ -39,21 +40,21 @@ impl NetworkBehaviour for Swarm {
         Vec::new()
     }
 
-    fn inject_connected(&mut self, peer_id: &PeerId) {
-        self.events
-            .push_back(SwarmEvent::PeerConnected(*peer_id))
-    }
+    // fn inject_connected(&mut self, peer_id: &PeerId) {
+    //     self.events
+    //         .push_back(SwarmEvent::PeerConnected(*peer_id))
+    // }
 
-    fn inject_disconnected(&mut self, peer_id: &PeerId) {
-        self.events
-            .push_back(SwarmEvent::PeerDisconnected(*peer_id))
-    }
+    // fn inject_disconnected(&mut self, peer_id: &PeerId) {
+    //     self.events
+    //         .push_back(SwarmEvent::PeerDisconnected(*peer_id))
+    // }
 
     fn inject_event(
         &mut self,
         _peer_id: PeerId,
         _connection: ConnectionId,
-        _event: <<Self::ProtocolsHandler as IntoProtocolsHandler>::Handler as ProtocolsHandler>::OutEvent,
+        _event: <<Self::ConnectionHandler as ConnectionHandler>::Handler as ProtocolsHandler>::OutEvent,
     ) {
     }
 
@@ -64,7 +65,7 @@ impl NetworkBehaviour for Swarm {
     ) -> Poll<
         NetworkBehaviourAction<
             <Self as NetworkBehaviour>::OutEvent,
-            <Self as NetworkBehaviour>::ProtocolsHandler,
+            <Self as NetworkBehaviour>::ConnectionHandler,
         >,
     > {
         if let Some(event) = self.events.pop_front() {

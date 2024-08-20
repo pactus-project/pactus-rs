@@ -29,7 +29,7 @@ impl PublicKey {
         self.to_fixed_bytes().to_vec()
     }
 
-    pub fn sanity_check(&self) -> Result<()> {
+    pub fn basic_check(&self) -> Result<()> {
         Ok(())
     }
 

@@ -1,24 +1,15 @@
 use super::config::Config;
-use super::swarm::{Swarm, SwarmEvent};
-use libp2p::request_response::{RequestResponseEvent, RequestResponseMessage};
+use super::swarm::{Swarm, };
+use libp2p::identify::Config as IdentifyConfig;
 use libp2p::{
-    core::{identity::Keypair, PeerId},
-    gossipsub::{
-        error::{PublishError, SubscriptionError},
-        Gossipsub, GossipsubConfigBuilder, GossipsubEvent, GossipsubMessage, IdentTopic,
-        MessageAuthenticity, MessageId,
-    },
-    identify::{Identify, IdentifyConfig, IdentifyEvent},
-    kad::{record::store::MemoryStore, Kademlia, KademliaConfig, KademliaEvent, QueryId},
-    mdns::{Mdns, MdnsEvent},
-    multiaddr::Protocol,
-    ping::{Ping, PingEvent, PingFailure, PingSuccess},
-    swarm::{
-        behaviour::toggle::Toggle, NetworkBehaviour, NetworkBehaviourAction, NetworkBehaviourEventProcess,
-        PollParameters,
-    },
-    NetworkBehaviour,
+    connection_limits::Behaviour as ConnectionLimits,
+    identify::Behaviour as Identify,
+    ping::{Behaviour as Ping, Config as PingConfig},
+    swarm::NetworkBehaviour,
+    PeerId,
 };
+use libp2p_mdns::Behaviour;
+use libp2p_swarm::behaviour::toggle::Toggle;
 use log::{debug, trace, warn, info};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
@@ -117,7 +108,7 @@ impl Behaviour {
             None
         };
 
-        let identify = Identify::new(IdentifyConfig::new("zarb/v1".into(), local_key.public()));
+        let identify = Identify::new(IdentifyConfig::new("pactus/v1".into(), local_key.public()));
 
         let gs_config_builder = GossipsubConfigBuilder::default();
         // gs_config_builder.message_id_fn(|msg: &GossipsubMessage| {
@@ -181,6 +172,8 @@ impl Behaviour {
     pub fn peers(&self) -> &HashSet<PeerId> {
         &self.peers
     }
+
+
 }
 
 impl NetworkBehaviourEventProcess<IdentifyEvent> for Behaviour {

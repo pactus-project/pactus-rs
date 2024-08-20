@@ -22,13 +22,13 @@ macro_rules! impl_from_to_bytes {
         }
     };
 }
-
 macro_rules! impl_cbor {
     ($ty:ty) => {
-        impl minicbor::Encode for $ty {
+        impl<C> minicbor::Encode<C> for $ty {
             fn encode<W>(
                 &self,
                 e: &mut minicbor::Encoder<W>,
+                _ctx: &mut C,
             ) -> core::result::Result<(), minicbor::encode::Error<W::Error>>
             where
                 W: minicbor::encode::Write,
@@ -38,12 +38,13 @@ macro_rules! impl_cbor {
             }
         }
 
-        impl<'a> minicbor::Decode<'a> for $ty {
+        impl<'a, C> minicbor::Decode<'a, C> for $ty {
             fn decode(
                 d: &mut minicbor::Decoder<'a>,
+                _ctx: &mut C,
             ) -> core::result::Result<$ty, minicbor::decode::Error> {
                 <$ty>::from_bytes(d.bytes()?)
-                    .map_err(|_| minicbor::decode::Error::Message("invalid data"))
+                    .map_err(|_| minicbor::decode::Error::message("invalid data"))
             }
         }
     };
